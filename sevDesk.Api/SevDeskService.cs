@@ -1,12 +1,7 @@
-﻿using Newtonsoft.Json;
-using RestSharp;
-using RestSharp.Serializers.NewtonsoftJson;
-using SevDeskClient;
+﻿using SevDeskClient;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -17,482 +12,363 @@ namespace sevDesk.Api
         #region Properties
 
         private readonly SevDeskServiceOptions _options;
-        private readonly RestClient _restClient;
+        private readonly ISevDeskClient _sevDeskClient;
+        private static List<StaticCountry> _countryCache;
+        private static List<Unity> _unityCache;
+
+        private List<string> _euCountries = new List<string> { "at", "be", "bg", "cy", "cz", "de", "dk", "ee", "es", "fi", "fr", "gr", "hr", "hu", "ie", "it", "lt", "lu", "lv", "mt", "nl", "pl", "pt", "ro", "se", "si", "sk" };
+        private static SevDeskCountry _sourceCountry;
 
         #endregion
 
         #region Constructor
 
-        public SevDeskService(SevDeskServiceOptions options)
+        public SevDeskService(SevDeskServiceOptions options, ISevDeskClient sevDeskClient)
         {
             _options = options;
-            _restClient = new RestClient(new Uri("https://my.sevdesk.de/api/v1/"));
-
-            //_restClient.DefaultParameters.RemoveParameter("token");
-            //_restClient.AddDefaultParameter("token", token, ParameterType.Querystring);
-            _restClient.AddDefaultHeader("Authorization", _options.Token);
-
-            var defaultSettings = new JsonSerializerSettings
-            {
-                ContractResolver = new JsonPropertiesResolver(),
-                DefaultValueHandling = DefaultValueHandling.Include,
-                TypeNameHandling = TypeNameHandling.None,
-                NullValueHandling = NullValueHandling.Ignore,
-                Formatting = Formatting.None,
-                ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor
-            };
-
-            _restClient.UseNewtonsoftJson(defaultSettings);
+            _sevDeskClient = sevDeskClient;
         }
 
         #endregion
 
-        #region Helper
+        #region Converter
 
-        private string _objectName<T>() where T : SevClientObject, new() => new T().ObjectName;
+        private StaticCountry _get(SevDeskCountry country) => _countryCache?.FirstOrDefault(x => x.Id == country.Id);
+
 
         #endregion
 
-        #region ISevDeskService
+        #region Mapped
 
-        public async Task<GetListResult<T>> GetListAsync<T>(int limit = 0, string[] embed = null, KeyValuePair<string, string>[] filter = null, bool depht = true, bool countAll = true, CancellationToken cancellationToken = default)
-            where T : SevClientObject, new()
+        public async Task<SevDeskCountry> GetCountryAsync(string code, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest();
-            restRequest.Resource = _objectName<T>();
-            restRequest.AddParameter("depth", depht);
-            restRequest.AddParameter("limit", "200");
-            restRequest.AddParameter("offset", "0");
-            restRequest.AddParameter("countAll", countAll);
+            var countries = await GetCountriesAsync(cancellationToken);
+            return countries.FirstOrDefault(x => x.Code == code);
+        }
 
-            if (filter != null)
+        public async Task<List<SevDeskCountry>> GetCountriesAsync(CancellationToken cancellationToken = default)
+        {
+            if (_countryCache != null)
             {
-                foreach (var item in filter)
+                return _countryCache.Convert();
+            }
+
+            var countryResult = await _sevDeskClient.GetListAsync<StaticCountry>(0, null, null, true, true, cancellationToken);
+            if (!countryResult.Success)
+            {
+                return null;
+            }
+
+            _countryCache = countryResult.Result;
+            var sourceCountry = _countryCache.FirstOrDefault(x => x.Code == _options.SourceCountry);
+            _sourceCountry = sourceCountry.Convert();
+            return _countryCache.Convert();
+        }
+
+
+        /*
+         * Supplier (ID: 2)
+         * Customer (ID: 3)
+         * Partner (ID: 4)
+         * Prospect Customer (ID: 28)
+         */
+
+        public async Task<SevDeskCustomer> CreateCustomerAsync(CreateCustomerRequest createCustomerRequest, CancellationToken cancellationToken = default)
+        {
+            var getCustomerNumberResult = await _sevDeskClient.FactoryGetNextCustomerNumberAsync(cancellationToken);
+            if (!getCustomerNumberResult.Success)
+            {
+                return null;
+            }
+
+            var contact = createCustomerRequest.Convert();
+            contact.Category = new Category()
+            {
+                Id = "3"
+            };
+            contact.CustomerNumber = getCustomerNumberResult.Result;
+
+            var postResult = await _sevDeskClient.CreateContact(contact, cancellationToken);
+            if (!postResult.Success)
+            {
+                return null;
+            }
+
+            return postResult.Result.Convert();
+        }
+
+        public async Task<SevDeskUser> GetContactPerson(string id, CancellationToken cancellationToken = default)
+        {
+            var getListResult = await _sevDeskClient.GetListAsync<SevUser>(0, null, null, true, true, cancellationToken);
+            if (!getListResult.Success)
+            {
+                return null;
+            }
+
+            return getListResult.Result?.FirstOrDefault(x => x.Id == id)?.Convert();
+        }
+
+        public async Task<SevDeskUser> GetAnyContactPerson(CancellationToken cancellationToken = default)
+        {
+            var getListResult = await _sevDeskClient.GetListAsync<SevUser>(0, null, null, true, true, cancellationToken);
+            if (!getListResult.Success)
+            {
+                return null;
+            }
+
+            return getListResult.Result?.FirstOrDefault()?.Convert();
+        }
+
+        /// <summary>
+        /// default - Umsatzsteuer ausweisen
+        /// eu - Steuerfreie innergemeinschaftliche Lieferung(Europäische Union)
+        /// noteu - Steuerschuldnerschaft des Leistungsempfängers(außerhalb EU, z.B.Schweiz)
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="destination"></param>
+        /// <returns> </returns>
+        public string GetTaxType(SevDeskCountry source, SevDeskCountry destination)
+        {
+            if (source.Code == destination.Code)
+            {
+                return "default";
+            }
+
+            if (_euCountries.Contains(destination.Code))
+            {
+                return "eu";
+            }
+
+            return "noteu";
+        }
+
+        public int GetDefaultTaxRate(string taxType)
+        {
+            switch (taxType)
+            {
+                case "default":
+                    return 19;
+                default:
+                    return 0;
+            }
+        }
+
+        public async Task<List<Unity>> GetUnitsAsync(CancellationToken cancellationToken = default)
+        {
+            if (_unityCache != null)
+            {
+                return _unityCache;
+            }
+
+            var getListResult = await _sevDeskClient.GetListAsync<Unity>(0, null, null, true, true, cancellationToken);
+            if (!getListResult.Success)
+            {
+                return null;
+            }
+
+            _unityCache = getListResult.Result;
+            return _unityCache;
+        }
+
+        public async Task<SevDeskInvoice> CreateInvoiceAsync(CreateInvoiceRequest request, CancellationToken cancellationToken = default)
+        {
+            if (request.TimeToPay < 0)
+            {
+                request.TimeToPay = 0;
+            }
+
+            if (string.IsNullOrWhiteSpace(request.AddressName))
+            {
+                throw new ArgumentException("AddressName is null");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.AddressStreet))
+            {
+                throw new ArgumentException("AddressStreet is null");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.AddressHouseNumber))
+            {
+                throw new ArgumentException("AddressHouseNumber is null");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.AddressPostalCode))
+            {
+                throw new ArgumentException("AddressPostalCode is null");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.AddressCity))
+            {
+                throw new ArgumentException("AddressCity is null");
+            }
+
+            if (request.LineItems == null)
+            {
+                throw new ArgumentNullException("LineItems is null");
+            }
+
+            if (!request.LineItems.Any())
+            {
+                throw new ArgumentException("No line items");
+            }
+
+            if (request.AddressCountry == null)
+            {
+                throw new ArgumentNullException("Country is null");
+            }
+
+            var addressCountry = _get(request.AddressCountry);
+            if (addressCountry == null)
+            {
+                throw new ArgumentException($"Country {request.AddressCountry.Name} ({request.AddressCountry.Id}) not found");
+            }
+
+            var taxType = GetTaxType(_sourceCountry, request.AddressCountry);
+            if (string.IsNullOrWhiteSpace(taxType))
+            {
+                throw new Exception("TaxType can not be determined.");
+            }
+
+            var taxRate = GetDefaultTaxRate(taxType);
+
+            if (request.Customer != null && request.CreateCustomer != null)
+            {
+                throw new ArgumentException("Ambingious customer.");
+            }
+
+            if (request.Customer == null && request.CreateCustomer == null)
+            {
+                throw new ArgumentException("Customer and CreateCustomer is null");
+            }
+
+            var customer = request.Customer;
+            Contact contact = null;
+            if (request.Customer != null)
+            {
+                contact = request.Customer.Convert();
+            }
+
+            if (request.CreateCustomer != null)
+            {
+                customer = await CreateCustomerAsync(request.CreateCustomer, cancellationToken);
+                contact = customer.Convert();
+            }
+
+            if (request.ContactPerson == null)
+            {
+                throw new ArgumentNullException("ContactPerson is null");
+            }
+
+            var contactPerson = request.ContactPerson.Convert();
+            var createUser = request.CreatedBy?.Convert() ?? contactPerson;
+
+            var getInvoiceNumberResult = await _sevDeskClient.FactoryGetNextInvoiceNumberAsync("RE", false, cancellationToken);
+            if (!getInvoiceNumberResult.Success)
+            {
+                throw new Exception("Unable to get next invoice number.");
+            }
+            var invoiceNumber = getInvoiceNumberResult.Result;
+
+            var invoice = new Invoice()
+            {
+                InvoiceNumber = invoiceNumber,
+                Contact = contact,
+                ContactPerson = contactPerson,
+                InvoiceDate = request.InvoiceDate.Date,
+                Header = $"Rechnung {invoiceNumber}",
+                TimeToPay = request.TimeToPay,
+                Address = $"{request.AddressName}\n{request.AddressStreet} {request.AddressHouseNumber}\n{request.AddressPostalCode} {request.AddressCity}",// "Arndt Bieberstein\nIm Neuneck 2/1\n78609 Tuningen",
+                AddressCountry = addressCountry,
+                DeliveryDate = request.DeliveryDate.Date,
+                Status = "200", // 100 = draft, 200 = geliefert, 1000 = bezahlt
+                TaxRate = request.TaxRate ?? taxRate,
+                TaxText = $"Umsatzsteuer {request.TaxRate}%",
+                TaxType = taxType,
+                SendDate = DateTime.Now.Date,
+                InvoiceType = "RE",
+                Currency = "EUR",
+                ShowNet = 1,
+                SendType = request.CreatePdf ? "VPDF" : "VPR",
+                CreateUser = createUser
+            };
+
+            if (taxType != "default")
+            {
+                invoice.FootText = "Umsatzsteuerschuldnerschaft des Leistungsempfängers";
+            }
+
+            var invoicePos = new List<InvoicePos>();
+            var posNumber = 0;
+            foreach (var lineItem in request.LineItems)
+            {
+                var pos = lineItem.Convert();
+                pos.PositionNumber = posNumber++;
+                invoicePos.Add(pos);
+            }
+
+            var factoryInvoiceResult = await _sevDeskClient.FactorySaveInvoiceAsync(invoice, invoicePos);
+            invoice = factoryInvoiceResult.Invoice;
+            invoicePos = factoryInvoiceResult.InvoicePos;
+
+            var result = new SevDeskInvoice()
+            {
+                Id = invoice.Id,
+                AddressCountry = request.AddressCountry,
+                Address = invoice.Address,
+                ContactPerson = request.ContactPerson,
+                Customer = customer,
+                DeliveryDate = invoice.DeliveryDate,
+                InvoiceDate = invoice.InvoiceDate.Value,
+                TaxRate = invoice.TaxRate,
+                TimeToPay = invoice.TimeToPay,
+                LineItems = invoicePos.Convert()
+            };
+
+            if (request.CreatePdf)
+            {
+                var streamResult = await _sevDeskClient.GetPdfAsync(invoice);
+                if (streamResult.Success)
                 {
-                    restRequest.AddParameter(item.Key, item.Value);
+                    result.PdfStream = streamResult.Stream;
                 }
             }
 
-            if (embed != null)
-            {
-                foreach (var item in embed)
-                {
-                    embed[Array.IndexOf(embed, item)] = item;
-                }
-                restRequest.AddParameter("embed", string.Join(",", embed));
-            }
-
-            var response = await _restClient.GetAsync(restRequest, cancellationToken);
-            var deserialized = JsonConvert.DeserializeAnonymousType(response.Content, new { total = new int?(), objects = new List<T>() }, new JsonSerializerSettings() { MissingMemberHandling = MissingMemberHandling.Ignore, NullValueHandling = NullValueHandling.Ignore });
-
-            if (limit == 0 & deserialized.objects != null)
-            {
-                limit = 200;
-                while (deserialized.objects.Count < deserialized.total - 1)
-                {
-                    restRequest.AddOrUpdateParameter("offset", limit);
-                    limit = limit + 200;
-
-                    response = _restClient.GetAsync(restRequest).Result;
-                    deserialized.objects.AddRange(JsonConvert.DeserializeAnonymousType(response.Content, new { total = new int(), objects = new List<T>() }, new JsonSerializerSettings() { MissingMemberHandling = MissingMemberHandling.Ignore, NullValueHandling = NullValueHandling.Ignore }).objects.ToList());
-                }
-            }
-
-            return new GetListResult<T>()
-            {
-                Result = deserialized.objects == null ? new List<T>() : deserialized.objects.ToList(),
-                StatusCode = response.StatusCode
-            };
+            return result;
         }
 
-        public async Task<GetResult<T>> GetAsync<T>(string id, string[] embed = null, CancellationToken cancellationToken = default)
-            where T : SevClientObject, new()
-        {
-
-            var restRequest = new RestRequest();
-            restRequest.Resource = $"{_objectName<T>()}/{id}";
-
-            if (embed != null)
-            {
-                foreach (var item in embed)
-                {
-                    embed[Array.IndexOf(embed, item)] = item;
-                }
-                restRequest.AddParameter("embed", string.Join(",", embed));
-            }
-
-            restRequest.RequestFormat = DataFormat.Json;
-            var response = await _restClient.GetAsync(restRequest, cancellationToken);
-
-            var deserialized = JsonConvert.DeserializeAnonymousType(response.Content, new { total = new int?(), objects = new List<T>() }, new JsonSerializerSettings() { MissingMemberHandling = MissingMemberHandling.Ignore, NullValueHandling = NullValueHandling.Ignore }).objects[0];
-            return new GetResult<T>()
-            {
-                Result = deserialized,
-                StatusCode = response.StatusCode
-            };
-        }
-
-        public async Task<PutResult<T>> UpdateAsync<T>(T item, CancellationToken cancellationToken = default)
-            where T : SevClientObject, new()
-        {
-            var restRequest = new RestRequest();
-            restRequest.Resource = $"{_objectName<T>()}/{item.Id}";
-
-            restRequest.AddJsonBody(item);
-            restRequest.RequestFormat = DataFormat.Json;
-            var response = await _restClient.PutAsync(restRequest, cancellationToken);
-
-            var deserialized = (JsonConvert.DeserializeAnonymousType(response.Content, new { objects = (T)Activator.CreateInstance(typeof(T)) }, new JsonSerializerSettings() { MissingMemberHandling = MissingMemberHandling.Ignore })).objects;
-            return new PutResult<T>()
-            {
-                Result = deserialized,
-                StatusCode = response.StatusCode
-            };
-        }
-
-        public async Task<PostResult<T>> AddAsync<T>(T item, CancellationToken cancellationToken = default)
-            where T : SevClientObject, new()
-        {
-
-            var restRequest = new RestRequest();
-            restRequest.Resource = _objectName<T>();
-            restRequest.AddJsonBody(item);
-            var response = await _restClient.PostAsync(restRequest, cancellationToken);
-
-            var deserialized = (JsonConvert.DeserializeAnonymousType(response.Content, new { objects = (T)Activator.CreateInstance(typeof(T)) }, new JsonSerializerSettings() { MissingMemberHandling = MissingMemberHandling.Ignore })).objects;
-            return new PostResult<T>()
-            {
-                Result = deserialized,
-                StatusCode = response.StatusCode
-            };
-        }
-
-        public async Task<DeleteResult> DeleteAsync<T>(string id, CancellationToken cancellationToken = default)
-            where T : SevClientObject, new()
-        {
-
-            var restRequest = new RestRequest();
-            restRequest.Resource = $"{_objectName<T>()}/{id}";
-            restRequest.AddParameter("id", id);
-
-            var response = await _restClient.DeleteAsync(restRequest, cancellationToken);
-            return new DeleteResult()
-            {
-                StatusCode = response.StatusCode
-            };
-        }
-
-        public async Task<MapTransactionsStatusResult> MapTransactionsAsync(CheckAccount checkAccount, CancellationToken cancellationToken = default)
-        {
-            var restRequest = new RestRequest();
-            restRequest.Resource = $"{checkAccount.ObjectName}/{checkAccount.Id}/mapTransactions";
-            restRequest.AddParameter("embed", "openReminderCharge");
-            restRequest.Method = Method.Post;
-
-            var response = await _restClient.ExecuteAsync(restRequest, cancellationToken);
-            var deserialized = JsonConvert.DeserializeAnonymousType(response.Content, new { objects = new MapTransactionsResult() }, new JsonSerializerSettings() { MissingMemberHandling = MissingMemberHandling.Ignore }).objects;
-
-            return new MapTransactionsStatusResult()
-            {
-                Result = deserialized,
-                StatusCode = response.StatusCode
-            };
-        }
-
-        public async Task<StreamResult<T>> GetPdfAsync<T>(T item, CancellationToken cancellationToken = default)
-            where T : SevClientStreamObject, new()
-        {
-            var restRequest = new RestRequest();
-            restRequest.Resource = $"{item.ObjectName}/{item.Id}/getPdf";
-            restRequest.AddParameter("id", item.Id);
-            restRequest.AddParameter("download", "true");
-
-            Stream stream = null;
-            var statusCode = HttpStatusCode.OK;
-            try
-            {
-                stream = await _restClient.DownloadStreamAsync(restRequest, cancellationToken);
-            }
-            catch (Exception e)
-            {
-#warning TODO den richtigen error hier auswerten
-                statusCode = HttpStatusCode.BadRequest;
-            }
-
-            return new StreamResult<T>()
-            {
-                Object = item,
-                Stream = stream,
-                StatusCode = statusCode
-            };
-        }
-
-#warning TODO Document
-        public async Task<StreamResult<Document>> DownloadAsync(Document document, CancellationToken cancellationToken = default)
-        {
-            var restRequest = new RestRequest();
-            restRequest.Resource = $"{document.ObjectName}/{document.Id}/download";
-
-            restRequest.AddParameter("id", document.Id);
-            restRequest.AddParameter("download", "true");
-
-            Stream stream = null;
-            var statusCode = HttpStatusCode.OK;
-            try
-            {
-                stream = await _restClient.DownloadStreamAsync(restRequest, cancellationToken);
-            }
-            catch (Exception e)
-            {
-#warning TODO den richtigen error hier auswerten
-                statusCode = HttpStatusCode.BadRequest;
-            }
-
-            return new StreamResult<Document>()
-            {
-                Object = document,
-                Stream = stream,
-                StatusCode = statusCode
-            };
-        }
-
-        public async Task<DownloadAndSaveResult<Document>> DownloadAsync(Document document, FileInfo fileInfo, CancellationToken cancellationToken = default)
-        {
-            var streamResult = await DownloadAsync(document, cancellationToken);
-            if (streamResult.StatusCode != HttpStatusCode.OK)
-            {
-                return new DownloadAndSaveResult<Document>()
-                {
-                    Object = document,
-                    FileInfo = fileInfo,
-                    StatusCode = streamResult.StatusCode
-                };
-            }
-
-            using (var writeStream = fileInfo.OpenWrite())
-            {
-                streamResult.Stream.CopyTo(writeStream);
-            }
-
-            fileInfo.CreationTime = (DateTime)document.Create;
-            fileInfo.LastWriteTimeUtc = (DateTime)document.Update;
-
-            return new DownloadAndSaveResult<Document>()
-            {
-                Object = document,
-                FileInfo = fileInfo,
-                StatusCode = streamResult.StatusCode
-            };
-        }
-
-        public async Task<GetResult<string>> FactoryGetNextInvoiceNumberAsync(string invoiceType = "RE", bool useNextNumber = true, CancellationToken cancellationToken = default)
-        {
-            var restRequest = new RestRequest();
-            restRequest.Resource = $"Invoice/Factory/getNextInvoiceNumber";
-
-            restRequest.AddQueryParameter("invoiceType", invoiceType);
-            restRequest.AddQueryParameter("useNextNumber", useNextNumber.ToString());
-            restRequest.Method = Method.Get;
-
-            var response = await _restClient.ExecuteAsync(restRequest, cancellationToken);
-            var deserialized = JsonConvert.DeserializeAnonymousType(response.Content, new { objects = "" }, new JsonSerializerSettings() { MissingMemberHandling = MissingMemberHandling.Ignore }).objects;
-            return new GetResult<string>()
-            {
-                Result = deserialized,
-                StatusCode = response.StatusCode
-            };
-        }
-
-        public async Task<FactoryInvoiceResult> FactorySaveInvoiceAsync(Invoice invoice, List<InvoicePos> positions, CancellationToken cancellationToken = default)
-        {
-            var restRequest = new RestRequest();
-            restRequest.Resource = "Invoice/Factory/saveInvoice";
-
-            if (string.IsNullOrWhiteSpace(invoice.InvoiceNumber))
-            {
-                var invoiceNumberResult = await FactoryGetNextInvoiceNumberAsync(invoice.InvoiceType, true, cancellationToken);
-                if (invoiceNumberResult.StatusCode == HttpStatusCode.OK)
-                {
-                    invoice.InvoiceNumber = invoiceNumberResult.Result;
-                    invoice.Header += $" {invoiceNumberResult.Result}";
-                }
-            }
-
-            if (string.IsNullOrWhiteSpace(invoice.address))
-            {
-                restRequest.AddQueryParameter("takeDefaultAddress", "true");
-            }
-            restRequest.AddJsonBody(new { invoice = invoice, invoicePosSave = positions });
-            restRequest.Method = Method.Post;
-
-            var response = await _restClient.ExecuteAsync(restRequest, cancellationToken);
-            invoice = JsonConvert.DeserializeAnonymousType(response.Content, new { objects = new { Invoice = new Invoice() } }, new JsonSerializerSettings() { MissingMemberHandling = MissingMemberHandling.Ignore }).objects.Invoice;
-            return new FactoryInvoiceResult()
-            {
-                Invoice = invoice,
-                StatusCode = response.StatusCode
-            };
-        }
-
-        public async Task<HttpStatusResult> BookAmountAsync(Invoice invoice, CheckAccount checkAccount = null, string sumGross = "", CancellationToken cancellationToken = default)
-        {
-            sumGross = string.IsNullOrWhiteSpace(sumGross) ? invoice.SumGross : sumGross;
-            checkAccount = checkAccount ?? new CheckAccount() { Id = "484485" }; // <- Kasse 484485
-
-            var restRequest = new RestRequest();
-            restRequest.Resource = $"Invoice/{invoice.Id}/bookAmount";
-            restRequest.AddJsonBody(new
-            {
-                amount = sumGross,
-                date = DateTimeOffset.Now.ToUnixTimeSeconds().ToString(),
-                type = "N",
-                checkAccount = checkAccount,
-                createFeed = "true"
-            });
-
-            restRequest.Method = Method.Put;
-
-            var response = await _restClient.ExecuteAsync(restRequest, cancellationToken);
-            return new HttpStatusResult()
-            {
-                StatusCode = response.StatusCode
-            };
-        }
-
-        public async Task<FactoryInvoiceResult> FactoryCreateInvoiceReminder(Invoice invoice, CancellationToken cancellationToken = default)
-        {
-            var restRequest = new RestRequest();
-            restRequest.Resource = "Invoice/Factory/createInvoiceReminder";
-
-            restRequest.AddJsonBody(new { invoice });
-            restRequest.Method = Method.Post;
-
-            var response = _restClient.ExecuteAsync(restRequest).Result;
-            if (response.StatusCode != HttpStatusCode.OK)
-            {
-                return new FactoryInvoiceResult()
-                {
-                    StatusCode = response.StatusCode
-                };
-            }
-
-            var dunningInvoice = JsonConvert.DeserializeAnonymousType(response.Content, new { objects = new Invoice() }, new JsonSerializerSettings() { MissingMemberHandling = MissingMemberHandling.Ignore }).objects;
-
-            dunningInvoice.Status = "200";
-            dunningInvoice.TimeToPay = 7;
-            if (invoice.dunningLevel >= 3)
-            {
-                dunningInvoice.Header = $"Letzte Mahnung - Rechnung Nr. {invoice.InvoiceNumber}";
-            }
-            dunningInvoice.SendDate = DateTime.Now.Date;
-
-            return await FactorySaveInvoiceAsync(dunningInvoice, null, cancellationToken);
-        }
-
-        public async Task<PostResult<TagRelation>> AddTagAsync<T>(Tag tag, T sevClientObject, CancellationToken cancellationToken = default)
-            where T : SevClientObject
-        {
-            var tagRelation = new TagRelation();
-            tagRelation.Tag = tag;
-            tagRelation.Object = sevClientObject;
-
-            var restRequest = new RestRequest();
-            restRequest.Resource = tagRelation.ObjectName;
-            restRequest.AddJsonBody(tagRelation);
-            restRequest.Method = Method.Post;
-
-            var response = await _restClient.ExecuteAsync(restRequest, cancellationToken);
-            var deserialized = (JsonConvert.DeserializeAnonymousType(response.Content, new { objects = (TagRelation)Activator.CreateInstance(typeof(TagRelation)) }, new JsonSerializerSettings() { MissingMemberHandling = MissingMemberHandling.Ignore })).objects;
-
-            return new PostResult<TagRelation>()
-            {
-                Result = deserialized,
-                StatusCode = response.StatusCode
-            };
-        }
-
-        public async Task<InvoiceRenderResult> InvoiceRenderAsync(string invoiceId, CancellationToken cancellationToken = default)
-        {
-            var restRequest = new RestRequest();
-            restRequest.Resource = $"Invoice/{invoiceId}/render";
-            restRequest.AddJsonBody(new
-            {
-                forceReload = true
-            });
-            restRequest.Method = Method.Post;
-
-            var response = await _restClient.ExecuteAsync(restRequest, cancellationToken);
-            dynamic deserialized = JsonConvert.DeserializeObject(response.Content);
-
-            return new InvoiceRenderResult()
-            {
-                DocumentId = deserialized.docId,
-                StatusCode = response.StatusCode
-            };
-        }
 
         #endregion
     }
 
-    public class HttpStatusResult
+    internal static class ConverterExtensions
     {
-        public HttpStatusCode StatusCode { get; set; }
-        public bool Success => StatusCode == HttpStatusCode.OK;
-    }
+        internal static Func<StaticCountry, SevDeskCountry> _countryConverter = x => new SevDeskCountry() { Id = x.Id, Name = x.Name, Code = x.Code };
+        internal static Func<InvoicePos, SevDeskLineItem> _lineItemConverter = x => new SevDeskLineItem() { Id = x.Id, Name = x.Name, PriceNet = x.PriceNet, Quantity = x.Quantity, TaxRate = x.TaxRate, Text = x.Text, UnityType = x.unity?.Id };
+        internal static List<SevDeskCountry> Convert(this IEnumerable<StaticCountry> countries) => countries?.Select(_countryConverter)?.ToList();
+        internal static List<SevDeskLineItem> Convert(this IEnumerable<InvoicePos> lineItems) => lineItems?.Select(_lineItemConverter)?.ToList();
 
-    public class GetResult<T> : HttpStatusResult
-    {
-        public T Result { get; set; }
-    }
+        internal static Contact Convert(this CreateCustomerRequest customer) => new Contact()
+        {
+            Status = "1000",
+            Name = customer.Name,
+            VatNumber = customer.VatNumber,
+            Familyname = customer.Familyname,
+            Surename = customer.Surename,
+            Titel = customer.Titel,
+            Description = customer.Description
+        };
 
-    public class GetListResult<T> : HttpStatusResult
-    {
-        public List<T> Result { get; set; }
-    }
+        internal static Contact Convert(this SevDeskCustomer customer)
+        {
+            var result = ((CreateCustomerRequest)customer).Convert();
+            result.Id = customer.Id;
+            return result;
+        }
 
-    public class PostResult<T> : HttpStatusResult
-    {
-        public T Result { get; set; }
-    }
-
-    public class PutResult<T> : HttpStatusResult
-    {
-        public T Result { get; set; }
-    }
-
-    public class DeleteResult : HttpStatusResult { }
-
-    public class MapTransactionsStatusResult : HttpStatusResult
-    {
-        public MapTransactionsResult Result { get; set; }
-    }
-
-    public class StreamResult<T> : HttpStatusResult
-        where T : SevClientStreamObject
-    {
-        public T Object { get; set; }
-        public Stream Stream { get; set; }
-    }
-
-    public class DownloadAndSaveResult<T> : HttpStatusResult
-        where T : SevClientStreamObject
-    {
-        public T Object { get; set; }
-        public FileInfo FileInfo { get; set; }
-    }
-
-    public class FactoryInvoiceResult : HttpStatusResult
-    {
-        public Invoice Invoice { get; set; }
-        public List<InvoicePos> InvoicePos { get; set; }
-    }
-
-    public class InvoiceRenderResult : HttpStatusResult
-    {
-        [JsonProperty(PropertyName = "pages")]
-        public int Pages { get; set; }
-
-        [JsonProperty(PropertyName = "docId")]
-        public string DocumentId { get; set; }
+        internal static SevDeskCustomer Convert(this Contact contact) => new SevDeskCustomer() { Id = contact.Id, Name = contact.Name, VatNumber = contact.VatNumber };
+        internal static SevUser Convert(this SevDeskUser user) => new SevUser() { Id = user.Id, Email = user.Email, FirstName = user.FirstName, Fullname = user.Fullname, LastName = user.LastName, Username = user.Username };
+        internal static SevDeskUser Convert(this SevUser user) => new SevDeskUser() { Id = user.Id, Email = user.Email, FirstName = user.FirstName, Fullname = user.Fullname, LastName = user.LastName, Username = user.Username };
+        internal static SevDeskCountry Convert(this StaticCountry country) => _countryConverter(country);
+        internal static InvoicePos Convert(this CreateLineItemRequest lineItem) => new InvoicePos() { Name = lineItem.Name, PriceNet = lineItem.PriceNet, Quantity = lineItem.Quantity, Text = lineItem.Text, unity = UnityTypes.GetUnity(lineItem.UnityType) };
     }
 }

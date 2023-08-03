@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using System;
 
 namespace sevDesk.Api
 {
@@ -12,6 +11,7 @@ namespace sevDesk.Api
 
             var options = optionsBuilder.Build();
             services.AddSingleton(options);
+            services.AddScoped<ISevDeskClient, SevDeskClient>();
             services.AddScoped<ISevDeskService, SevDeskService>();
         }
     }

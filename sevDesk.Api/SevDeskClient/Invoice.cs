@@ -114,7 +114,9 @@ namespace SevDeskClient
         public string addressName2 { get; set; }
         public string addressGender { get; set; }
         public string accountEndDate { get; set; }
-        public string address { get; set; }
+
+        [JsonProperty("address")]
+        public string Address { get; set; }
 
         [JsonProperty("currency")]
         public string Currency { get; set; } = "EUR";

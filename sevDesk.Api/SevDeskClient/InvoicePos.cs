@@ -12,7 +12,7 @@ namespace SevDeskClient
         public Invoice invoice { get; set; }
         public Part part { get; set; }
 
-        [JsonProperty("quantity")]
+        [JsonProperty("quantity"), JsonConverter(typeof(QuantityJsonConverter))]
         public int Quantity { get; set; } = 1;
 
         [JsonProperty("price")]
@@ -23,13 +23,13 @@ namespace SevDeskClient
         public string priority { get; set; } = "0";
         public Unity unity { get; set; } = new Unity();
 
-        [JsonProperty("positionNumber")]
+        [JsonProperty("positionNumber"), JsonConverter(typeof(QuantityJsonConverter))]
         public int PositionNumber { get; set; }
 
         [JsonProperty("text")]
         public string Text { get; set; }
 
-        [JsonProperty("discount")]
+        [JsonProperty("discount"), JsonConverter(typeof(QuantityJsonConverter))]
         public int Discount { get; set; }
 
         [JsonProperty("taxRate")]
@@ -62,5 +62,51 @@ namespace SevDeskClient
 
         public InvoicePos() { }
 
+    }
+
+    public class QuantityJsonConverter : JsonConverter
+    {
+        public override bool CanConvert(Type objectType)
+        {
+            return true;
+        }
+
+        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        {
+            try
+            {
+                return serializer.Deserialize(reader, objectType);
+            }
+            catch { }
+            return 0;
+        }
+
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        {
+            serializer.Serialize(writer, value);
+        }
+    }
+
+    public class StringToIntConverter : JsonConverter
+    {
+        public override bool CanConvert(Type objectType)
+        {
+            return true;
+        }
+
+        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        {
+            try
+            {
+                return serializer.Deserialize(reader, objectType);
+            }
+            catch { }
+            return 0;
+        }
+
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        {
+            serializer.Serialize(writer, value);
+        }
     }
 }
