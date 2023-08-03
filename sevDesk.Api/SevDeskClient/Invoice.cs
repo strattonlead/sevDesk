@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using sevDesk.Api;
 using System;
 using System.Collections.Generic;
 
@@ -9,39 +10,99 @@ namespace SevDeskClient
     {
         [JsonProperty("objectName")]
         public override string ObjectName { get; set; } = "Invoice";
-        public string invoiceNumber { get; set; }
-        public Contact contact { get; set; }
+
+        [JsonProperty("invoiceNumber")]
+        public string InvoiceNumber { get; set; }
+
+        [JsonProperty("contact")]
+        public Contact Contact { get; set; }
+
+        [JsonProperty("create")]
         public string create { get; set; }
+
+        [JsonProperty("update")]
         public string update { get; set; }
-        public DateTime? invoiceDate { get; set; } = DateTime.Now;
-        public string header { get; set; } = "Rechnung";
-        public string headText { get; set; }
-        public string footText { get; set; }
-        public string timeToPay { get; set; } = "7";
-        public string discountTime { get; set; }
-        public string discount { get; set; } = "false";
-        public string addressName { get; set; }
-        public string addressStreet { get; set; }
+
+        [JsonProperty("invoiceDate"), JsonConverter(typeof(DateFormatConverter), "dd.MM.yyyy")]
+        public DateTime? InvoiceDate { get; set; } = DateTime.Now;
+
+        [JsonProperty("header")]
+        public string Header { get; set; } = "Rechnung";
+
+        [JsonProperty("headText")]
+        public string HeadText { get; set; }
+
+        [JsonProperty("footText")]
+        public string FootText { get; set; }
+
+        /// <summary>
+        /// Tage bis die Zahlung fällig wird
+        /// </summary>
+        [JsonProperty("timeToPay")]
+        public int TimeToPay { get; set; } = 7;
+
+        [JsonProperty("discountTime")]
+        public string DiscountTime { get; set; }
+
+        [JsonProperty("discount")]
+        public int Discount { get; set; }
+
+        [JsonProperty("addressName")]
+        public string AddressName { get; set; }
+
+        [JsonProperty("addressStreet")]
+        public string AddressStreet { get; set; }
+
+        [JsonProperty("AddressZip")]
         public string addressZip { get; set; }
-        public string addressCity { get; set; }
+
+        [JsonProperty("addressCity")]
+        public string AddressCity { get; set; }
+
         [JsonProperty("addressCountry")]
         public StaticCountry AddressCountry { get; set; } = new StaticCountry();
-        public string payDate { get; set; }
-        public SevUser createUser { get; set; } = new SevUser();
-        public string deliveryDate { get; set; }
-        public string status { get; set; } = "200";
-        public string smallSettlement { get; set; }
-        public SevUser contactPerson { get; set; } = new SevUser();
-        public string taxRate { get; set; } = "0";
-        public string taxText { get; set; } = "Umsatzsteuer ausweisen";
+
+        [JsonProperty("payDate")]
+        public DateTime? PayDate { get; set; }
+
+        /// <summary>
+        /// Die Person die die Rechnung erstellt
+        /// </summary>
+        [JsonProperty("createUser")]
+        public SevUser CreateUser { get; set; } = new SevUser();
+
+        [JsonProperty("deliveryDate"), JsonConverter(typeof(DateFormatConverter), "dd.MM.yyyy")]
+        public DateTime DeliveryDate { get; set; }
+
+        [JsonProperty("status")]
+        public string Status { get; set; } = "100";
+
+        [JsonProperty("smallSettlement")]
+        public int SmallSettlement { get; set; }
+
+        [JsonProperty("contactPerson")]
+        public SevUser ContactPerson { get; set; } = new SevUser();
+
+        [JsonProperty("taxRate")]
+        public int TaxRate { get; set; } = 19;
+
+        [JsonProperty("taxText")]
+        public string TaxText { get; set; } = "Umsatzsteuer ausweisen";
         public int? dunningLevel { get; set; } = 0;
         public long? lastDunningDate { get; set; }
         public string addressParentName { get; set; }
-        public string taxType { get; set; } = "default";
+
+        [JsonProperty("taxType")]
+        public string TaxType { get; set; } = "default";
         public PaymentMethod paymentMethod { get; set; }
-        public string sendDate { get; set; } = DateTimeOffset.Now.ToUnixTimeSeconds().ToString();
+
+        [JsonProperty("sendDate"), JsonConverter(typeof(DateFormatConverter), "dd.MM.yyyy")]
+        public DateTime SendDate { get; set; }
+        //public string sendDate { get; set; } = DateTimeOffset.Now.ToUnixTimeSeconds().ToString();
         public string originLastInvoice { get; set; }
-        public string invoiceType { get; set; } = "RE";
+
+        [JsonProperty("invoiceType")]
+        public string InvoiceType { get; set; } = "RE";
         public string accountIntervall { get; set; }
         public string accountLastInvoice { get; set; }
         public string accountNextInvoice { get; set; }
@@ -54,9 +115,15 @@ namespace SevDeskClient
         public string addressGender { get; set; }
         public string accountEndDate { get; set; }
         public string address { get; set; }
-        public string currency { get; set; } = "EUR";
-        public string sumNet { get; set; }
-        public string sumGross { get; set; } = "0";
+
+        [JsonProperty("currency")]
+        public string Currency { get; set; } = "EUR";
+
+        [JsonProperty("sumNet")]
+        public string SumNet { get; set; }
+
+        [JsonProperty("sumGross")]
+        public string SumGross { get; set; } = "0";
         public string sumDiscounts { get; set; }
         public string sumNetForeignCurrency { get; set; }
         public string sumTaxForeignCurrency { get; set; }
@@ -67,24 +134,31 @@ namespace SevDeskClient
         public string sumGrossAccounting { get; set; }
         public string paidAmount { get; set; }
         public string customerInternalNote { get; set; }
-        public string showNet { get; set; } = "false";
+
+        [JsonProperty("showNet")]
+        public int ShowNet { get; set; }
         public string enshrined { get; set; }
-        public string sendType { get; set; } = "VP";
+
+        [JsonProperty("sendType")]
+        public string SendType { get; set; } = "VP";
         public string deliveryDateUntil { get; set; }
         public string sendPaymentReceivedNotificationDate { get; set; }
-        public string mapAll { get; } = "true";
 
-        public List<Tag> tags { get; set; } = new List<Tag>();
+        [JsonProperty("mapAll")]
+        public bool MapAll => true;
+
+        [JsonProperty("tags")]
+        public List<Tag> Tags { get; set; } = new List<Tag>();
 
         public Invoice()
         {
 
             // Standartwerte festlegen
-            //this.headText = "<p>wir erlauben uns, unsere Lieferung/Leistung wie folgt in Rechnung zu stellen:<br/></p>";
+            HeadText = "<p>wir erlauben uns, unsere Lieferung/Leistung wie folgt in Rechnung zu stellen:<br/></p>";
             //this.headText = SevDesk.textTemplates?.SingleOrDefault(s => s.Main == "1" & s.ObjectType == "RE" & s.TextType == "HEAD").Text ?? "";
-            //this.footText = "<p><font color = \"red\">BITTE BEACHTEN:<br/>" +
+            //FootText = "<p><font color = \"red\">BITTE BEACHTEN:<br/>" +
             //                "Das Protokoll für diese Wartung wurde, durch uns, elektronisch an Ihren Aufgabenträger übermittelt. Leider ist es uns nicht möglich zu prüfen ob dieser die Datenübermittlung erhalten hat, oder korrekt verarbeiten konnte. Bitte setzten Sie sich dazu mit Ihrem Aufgabenträger binnen 14 Tagen in Verbindung und lassen Sie sich den Erhalt des Wartungsprotokolls bestätigen. Wir behalten uns vor, nach 14 Tagen ab Rechnungsdatum, eine Bearbeitungsgebühr für einen nachträglichen Protokollversand zu erheben.</font></p>" +
-            //                "<p>Leider ist es uns vorerst aus Technischen Gründen(PSD2 Umstellung der Banken) nicht mehr möglich Lastschriften einzuziehen.Wir bitten daher um Überweisung der Rechnung.</p>" +
+            //                "<p>Leider ist es uns vorerst aus Technischen Gründen(PSD2 Umstellung der Banken) nicht mehr möglich Lastschriften einzuziehen. Wir bitten daher um Überweisung der Rechnung.</p>" +
             //                "<p>Wir bedanken uns für Ihren Auftrag und verbleiben</p>" +
             //                "<p>mit freundlichen Grüßen</p>" +
             //                "<p>Nach dem geltenden Schwarzarbeitbekämpfungsgesetz §14 Abs.4 Satz 1 Nr.9 UStG sind wir verpflichtet, Sie darauf hinzuweisen, dass Sie unsere Rechnung und Ihren Zahlungsbeleg zwei Jahre lang aufbewahren müssen.<br/></p>" +

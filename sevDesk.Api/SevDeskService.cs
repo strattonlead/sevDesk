@@ -308,13 +308,13 @@ namespace sevDesk.Api
             var restRequest = new RestRequest();
             restRequest.Resource = "Invoice/Factory/saveInvoice";
 
-            if (string.IsNullOrWhiteSpace(invoice.invoiceNumber))
+            if (string.IsNullOrWhiteSpace(invoice.InvoiceNumber))
             {
-                var invoiceNumberResult = await FactoryGetNextInvoiceNumberAsync(invoice.invoiceType, true, cancellationToken);
+                var invoiceNumberResult = await FactoryGetNextInvoiceNumberAsync(invoice.InvoiceType, true, cancellationToken);
                 if (invoiceNumberResult.StatusCode == HttpStatusCode.OK)
                 {
-                    invoice.invoiceNumber = invoiceNumberResult.Result;
-                    invoice.header += $" {invoiceNumberResult.Result}";
+                    invoice.InvoiceNumber = invoiceNumberResult.Result;
+                    invoice.Header += $" {invoiceNumberResult.Result}";
                 }
             }
 
@@ -336,7 +336,7 @@ namespace sevDesk.Api
 
         public async Task<HttpStatusResult> BookAmountAsync(Invoice invoice, CheckAccount checkAccount = null, string sumGross = "", CancellationToken cancellationToken = default)
         {
-            sumGross = string.IsNullOrWhiteSpace(sumGross) ? invoice.sumGross : sumGross;
+            sumGross = string.IsNullOrWhiteSpace(sumGross) ? invoice.SumGross : sumGross;
             checkAccount = checkAccount ?? new CheckAccount() { Id = "484485" }; // <- Kasse 484485
 
             var restRequest = new RestRequest();
@@ -378,13 +378,13 @@ namespace sevDesk.Api
 
             var dunningInvoice = JsonConvert.DeserializeAnonymousType(response.Content, new { objects = new Invoice() }, new JsonSerializerSettings() { MissingMemberHandling = MissingMemberHandling.Ignore }).objects;
 
-            dunningInvoice.status = "200";
-            dunningInvoice.timeToPay = "7";
+            dunningInvoice.Status = "200";
+            dunningInvoice.TimeToPay = 7;
             if (invoice.dunningLevel >= 3)
             {
-                dunningInvoice.header = $"Letzte Mahnung - Rechnung Nr. {invoice.invoiceNumber}";
+                dunningInvoice.Header = $"Letzte Mahnung - Rechnung Nr. {invoice.InvoiceNumber}";
             }
-            dunningInvoice.sendDate = DateTime.Now.ToShortDateString();
+            dunningInvoice.SendDate = DateTime.Now.Date;
 
             return await FactorySaveInvoiceAsync(dunningInvoice, null, cancellationToken);
         }
@@ -411,12 +411,33 @@ namespace sevDesk.Api
             };
         }
 
+        public async Task<InvoiceRenderResult> InvoiceRenderAsync(string invoiceId, CancellationToken cancellationToken = default)
+        {
+            var restRequest = new RestRequest();
+            restRequest.Resource = $"Invoice/{invoiceId}/render";
+            restRequest.AddJsonBody(new
+            {
+                forceReload = true
+            });
+            restRequest.Method = Method.Post;
+
+            var response = await _restClient.ExecuteAsync(restRequest, cancellationToken);
+            dynamic deserialized = JsonConvert.DeserializeObject(response.Content);
+
+            return new InvoiceRenderResult()
+            {
+                DocumentId = deserialized.docId,
+                StatusCode = response.StatusCode
+            };
+        }
+
         #endregion
     }
 
     public class HttpStatusResult
     {
         public HttpStatusCode StatusCode { get; set; }
+        public bool Success => StatusCode == HttpStatusCode.OK;
     }
 
     public class GetResult<T> : HttpStatusResult
@@ -464,5 +485,14 @@ namespace sevDesk.Api
     {
         public Invoice Invoice { get; set; }
         public List<InvoicePos> InvoicePos { get; set; }
+    }
+
+    public class InvoiceRenderResult : HttpStatusResult
+    {
+        [JsonProperty(PropertyName = "pages")]
+        public int Pages { get; set; }
+
+        [JsonProperty(PropertyName = "docId")]
+        public string DocumentId { get; set; }
     }
 }

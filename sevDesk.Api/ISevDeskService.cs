@@ -41,6 +41,8 @@ namespace sevDesk.Api
         Task<PostResult<TagRelation>> AddTagAsync<T>(Tag tag, T sevClientObject, CancellationToken cancellationToken = default)
             where T : SevClientObject;
 
+        Task<InvoiceRenderResult> InvoiceRenderAsync(string invoiceId, CancellationToken cancellationToken = default);
+
         // TODO
         //Task<bool> CheckCustomerNumberAvailability(string customerNumber);
         //Task<string> GetNextCustomerNumber();
