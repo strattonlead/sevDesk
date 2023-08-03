@@ -122,10 +122,13 @@ namespace SevDeskClient
         public string Currency { get; set; } = "EUR";
 
         [JsonProperty("sumNet")]
-        public string SumNet { get; set; }
+        public decimal SumNet { get; set; }
 
         [JsonProperty("sumGross")]
-        public string SumGross { get; set; } = "0";
+        public decimal SumGross { get; set; }
+
+        [JsonProperty("sumTax")]
+        public decimal SumTax { get; set; }
         public string sumDiscounts { get; set; }
         public string sumNetForeignCurrency { get; set; }
         public string sumTaxForeignCurrency { get; set; }

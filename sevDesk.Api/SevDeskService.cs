@@ -313,6 +313,7 @@ namespace sevDesk.Api
             var result = new SevDeskInvoice()
             {
                 Id = invoice.Id,
+                InvoiceNumber = invoice.InvoiceNumber,
                 AddressCountry = request.AddressCountry,
                 Address = invoice.Address,
                 ContactPerson = request.ContactPerson,
@@ -321,6 +322,9 @@ namespace sevDesk.Api
                 InvoiceDate = invoice.InvoiceDate.Value,
                 TaxRate = invoice.TaxRate,
                 TimeToPay = invoice.TimeToPay,
+                NetValue = invoice.SumNet,
+                GrossValue = invoice.SumGross,
+                TaxValue = invoice.SumTax,
                 LineItems = invoicePos.Convert()
             };
 

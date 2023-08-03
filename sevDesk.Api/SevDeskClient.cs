@@ -368,7 +368,7 @@ namespace sevDesk.Api
 
         public async Task<HttpStatusResult> BookAmountAsync(Invoice invoice, CheckAccount checkAccount = null, string sumGross = "", CancellationToken cancellationToken = default)
         {
-            sumGross = string.IsNullOrWhiteSpace(sumGross) ? invoice.SumGross : sumGross;
+            sumGross = string.IsNullOrWhiteSpace(sumGross) ? invoice.SumGross.ToString() : sumGross;
             checkAccount = checkAccount ?? new CheckAccount() { Id = "484485" }; // <- Kasse 484485
 
             var restRequest = new RestRequest();

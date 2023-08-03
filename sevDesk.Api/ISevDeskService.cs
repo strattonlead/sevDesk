@@ -258,6 +258,7 @@ namespace sevDesk.Api
     public class SevDeskInvoice
     {
         public string Id { get; set; }
+        public string InvoiceNumber { get; set; }
         public SevDeskCountry AddressCountry { get; set; }
         public SevDeskCustomer Customer { get; set; }
         public SevDeskUser ContactPerson { get; set; }
@@ -287,5 +288,10 @@ namespace sevDesk.Api
 
         [JsonIgnore]
         public Stream PdfStream { get; set; }
+
+        public string Currency { get; set; }
+        public decimal NetValue { get; set; }
+        public decimal TaxValue { get; set; }
+        public decimal GrossValue { get; set; }
     }
 }

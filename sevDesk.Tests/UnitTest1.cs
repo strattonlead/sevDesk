@@ -134,7 +134,7 @@ namespace sevDesk.Tests
                     new CreateLineItemRequest()
                     {
                         Quantity = 1,
-                        PriceNet = 100,
+                        PriceNet = 99,
                         Name = "Position 1",
                         Text = "Normal mit 19% puaschal",
                         TaxRate = 19,
