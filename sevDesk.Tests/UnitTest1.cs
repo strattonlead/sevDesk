@@ -101,9 +101,67 @@ namespace sevDesk.Tests
         }
 
         [Fact]
-        public void TestService()
+        public void CreateInvoiceWithExistingCustomerTest()
         {
-            var aaaaa = _sevDeskService.GetUnitsAsync().Result;
+            var germany = _sevDeskService.GetCountryAsync("de").Result;
+            var contactPerson = _sevDeskService.GetAnyContactPerson().Result; // "777966"
+
+            var createRequest = new CreateInvoiceRequest()
+            {
+                AddressName = "Simon Löffler",
+                AddressStreet = "Bahnhofstraße",
+                AddressHouseNumber = "8/1",
+                AddressPostalCode = "78048",
+                AddressCity = "Villingen",
+                AddressCountry = germany,
+                InvoiceDate = DateTime.Now.Date,
+                DeliveryDate = DateTime.Now.Date,
+                CreatePdf = true,
+                TimeToPay = 30,
+                Customer = new SevDeskCustomer()
+                {
+                    Id = "64658688"
+                },
+                ContactPerson = contactPerson,
+                LineItems = new List<CreateLineItemRequest>()
+                {
+                    new CreateLineItemRequest()
+                    {
+                        Quantity = 1,
+                        PriceNet = 99,
+                        Name = "Position 1",
+                        Text = "Normal mit 19% puaschal",
+                        TaxRate = 19,
+                        UnityType = UnityTypes.FLAT_RATE.Id
+                    },
+                    new CreateLineItemRequest()
+                    {
+                        Quantity = 1,
+                        PriceNet = 100,
+                        Name = "Position 2",
+                        Text = "Ohne Steuer in Stunden",
+                        TaxRate = 0,
+                        UnityType = UnityTypes.HOURS.Id
+                    },
+                     new CreateLineItemRequest()
+                    {
+                        Quantity = 1,
+                        PriceNet = 100,
+                        Name = "Position 3",
+                        Text = "Steuer automatisch berechnen in Stück",
+                        UnityType = UnityTypes.PIECES.Id
+                    }
+                }
+            };
+
+            var result = _sevDeskService.CreateInvoiceAsync(createRequest).Result;
+
+            Assert.NotNull(result.PdfStream);
+        }
+
+        [Fact]
+        public void CreateInvoiceWithNewCustomerTest()
+        {
             var germany = _sevDeskService.GetCountryAsync("de").Result;
             var contactPerson = _sevDeskService.GetAnyContactPerson().Result; // "777966"
 
@@ -121,11 +179,11 @@ namespace sevDesk.Tests
                 TimeToPay = 30,
                 CreateCustomer = new CreateCustomerRequest()
                 {
-                    Name = "Löffel GmbH",
-                    Surename = "Simon",
-                    Familyname = "Löffler",
-                    Titel = "M.Sc",
-                    VatNumber = "DE326904432",
+                    CompanyName = "Löffel GmbH",
+                    FirstName = "Simon",
+                    LastName = "Löffler",
+                    Title = "M.Sc",
+                    ValueAddedTaxId = "DE326904432",
                     Description = "Ein starker Mitarbeiter"
                 },
                 ContactPerson = contactPerson,
@@ -163,6 +221,41 @@ namespace sevDesk.Tests
             var result = _sevDeskService.CreateInvoiceAsync(createRequest).Result;
 
             Assert.NotNull(result.PdfStream);
+        }
+
+        [Fact]
+        public void CRUDCustomerTest()
+        {
+            var request = new CreateCustomerRequest()
+            {
+                CompanyName = "Neu erstellt",
+                FirstName = "Vorname",
+                LastName = "Nachname",
+                Title = "M.Sc",
+                ValueAddedTaxId = "DE326904432",
+                Description = "Neu erstellt"
+            };
+
+            var customer = _sevDeskService.CreateCustomerAsync(request).Result;
+
+            var updateRequest = new UpdateCustomerRequest(customer);
+            updateRequest.FirstName = "Neuer Name";
+            updateRequest.LastName = "Neuer Nachname";
+            customer = _sevDeskService.UpdateCustomerAsync(updateRequest).Result;
+
+            Assert.Equal(updateRequest.FirstName, customer.FirstName);
+            Assert.Equal(updateRequest.LastName, customer.LastName);
+
+            customer = _sevDeskService.GetCustomerAsync(customer.Id).Result;
+
+            Assert.Equal(updateRequest.FirstName, customer.FirstName);
+            Assert.Equal(updateRequest.LastName, customer.LastName);
+
+            var success = _sevDeskService.DeleteCustomerAsync(customer.Id).Result;
+            Assert.True(success);
+
+            customer = _sevDeskService.GetCustomerAsync(customer.Id).Result;
+            Assert.Null(customer);
         }
     }
 }

@@ -41,6 +41,7 @@ namespace sevDesk.Api
         Task<PostResult<TagRelation>> AddTagAsync<T>(Tag tag, T sevClientObject, CancellationToken cancellationToken = default)
             where T : SevClientObject;
         Task<PostResult<Contact>> CreateContact(Contact contact, CancellationToken cancellationToken = default);
+        Task<PostResult<Contact>> UpdateContact(Contact contact, CancellationToken cancellationToken = default);
 
         // TODO
         //Task<bool> CheckCustomerNumberAvailability(string customerNumber);

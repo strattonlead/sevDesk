@@ -97,6 +97,41 @@ namespace sevDesk.Api
             return postResult.Result.Convert();
         }
 
+        public async Task<SevDeskCustomer> UpdateCustomerAsync(UpdateCustomerRequest updateCustomerRequest, CancellationToken cancellationToken = default)
+        {
+            var contact = updateCustomerRequest.Convert();
+            contact.Category = new Category()
+            {
+                Id = "3"
+            };
+
+            var postResult = await _sevDeskClient.UpdateAsync(contact, cancellationToken);
+            if (!postResult.Success)
+            {
+                return null;
+            }
+
+            return postResult.Result.Convert();
+        }
+
+        public async Task<bool> DeleteCustomerAsync(string id, CancellationToken cancellationToken = default)
+        {
+            var deleteResult = await _sevDeskClient.DeleteAsync<Contact>(id, cancellationToken);
+            return deleteResult.Success;
+        }
+
+        public async Task<SevDeskCustomer> GetCustomerAsync(string id, CancellationToken cancellationToken = default)
+        {
+            var getResult = await _sevDeskClient.GetAsync<Contact>(id, null, cancellationToken);
+            if (!getResult.Success)
+            {
+                return null;
+            }
+
+            return getResult.Result.Convert();
+        }
+
+
         public async Task<SevDeskUser> GetContactPerson(string id, CancellationToken cancellationToken = default)
         {
             var getListResult = await _sevDeskClient.GetListAsync<SevUser>(0, null, null, true, true, cancellationToken);
@@ -354,11 +389,11 @@ namespace sevDesk.Api
         internal static Contact Convert(this CreateCustomerRequest customer) => new Contact()
         {
             Status = "1000",
-            Name = customer.Name,
-            VatNumber = customer.VatNumber,
-            Familyname = customer.Familyname,
-            Surename = customer.Surename,
-            Titel = customer.Titel,
+            Name = customer.CompanyName,
+            VatNumber = customer.ValueAddedTaxId,
+            Familyname = customer.LastName,
+            Surename = customer.FirstName,
+            Titel = customer.Title,
             Description = customer.Description
         };
 
@@ -369,7 +404,7 @@ namespace sevDesk.Api
             return result;
         }
 
-        internal static SevDeskCustomer Convert(this Contact contact) => new SevDeskCustomer() { Id = contact.Id, Name = contact.Name, VatNumber = contact.VatNumber };
+        internal static SevDeskCustomer Convert(this Contact contact) => new SevDeskCustomer() { Id = contact.Id, CompanyName = contact.Name, ValueAddedTaxId = contact.VatNumber, FirstName = contact.Surename, LastName = contact.Familyname, Title = contact.Titel, Description = contact.Description };
         internal static SevUser Convert(this SevDeskUser user) => new SevUser() { Id = user.Id, Email = user.Email, FirstName = user.FirstName, Fullname = user.Fullname, LastName = user.LastName, Username = user.Username };
         internal static SevDeskUser Convert(this SevUser user) => new SevDeskUser() { Id = user.Id, Email = user.Email, FirstName = user.FirstName, Fullname = user.Fullname, LastName = user.LastName, Username = user.Username };
         internal static SevDeskCountry Convert(this StaticCountry country) => _countryConverter(country);

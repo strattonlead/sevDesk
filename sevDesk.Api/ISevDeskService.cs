@@ -17,6 +17,9 @@ namespace sevDesk.Api
         Task<List<SevDeskCountry>> GetCountriesAsync(CancellationToken cancellationToken = default);
         Task<SevDeskInvoice> CreateInvoiceAsync(CreateInvoiceRequest createInvoiceRequest, CancellationToken cancellationToken = default);
         Task<SevDeskCustomer> CreateCustomerAsync(CreateCustomerRequest createCustomerRequest, CancellationToken cancellationToken = default);
+        Task<SevDeskCustomer> UpdateCustomerAsync(UpdateCustomerRequest updateCustomerRequest, CancellationToken cancellationToken = default);
+        Task<bool> DeleteCustomerAsync(string id, CancellationToken cancellationToken = default);
+        Task<SevDeskCustomer> GetCustomerAsync(string id, CancellationToken cancellationToken = default);
         Task<SevDeskUser> GetContactPerson(string id, CancellationToken cancellationToken = default);
         Task<SevDeskUser> GetAnyContactPerson(CancellationToken cancellationToken = default);
         Task<List<Unity>> GetUnitsAsync(CancellationToken cancellationToken = default);
@@ -39,12 +42,31 @@ namespace sevDesk.Api
 
     public class CreateCustomerRequest
     {
-        public string Surename { get; set; }
-        public string Familyname { get; set; }
-        public string Titel { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string Title { get; set; }
         public string Description { get; set; }
-        public string Name { get; set; }
-        public string VatNumber { get; set; }
+        public string CompanyName { get; set; }
+
+        /// <summary>
+        /// Umsatzsteuer ID
+        /// </summary>
+        public string ValueAddedTaxId { get; set; }
+    }
+
+    public class UpdateCustomerRequest : SevDeskCustomer
+    {
+        public UpdateCustomerRequest() { }
+        public UpdateCustomerRequest(SevDeskCustomer customer)
+        {
+            Id = customer.Id;
+            FirstName = customer.FirstName;
+            LastName = customer.LastName;
+            Title = customer.Title;
+            Description = customer.Description;
+            CompanyName = customer.CompanyName;
+            ValueAddedTaxId = customer.ValueAddedTaxId;
+        }
     }
 
     /// <summary>

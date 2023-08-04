@@ -119,14 +119,21 @@ namespace sevDesk.Api
             }
 
             restRequest.RequestFormat = DataFormat.Json;
-            var response = await _restClient.GetAsync(restRequest, cancellationToken);
-
-            var deserialized = JsonConvert.DeserializeAnonymousType(response.Content, new { total = new int?(), objects = new List<T>() }, new JsonSerializerSettings() { MissingMemberHandling = MissingMemberHandling.Ignore, NullValueHandling = NullValueHandling.Ignore }).objects[0];
-            return new GetResult<T>()
+            try
             {
-                Result = deserialized,
-                StatusCode = response.StatusCode
-            };
+                var response = await _restClient.GetAsync(restRequest, cancellationToken);
+
+                var deserialized = JsonConvert.DeserializeAnonymousType(response.Content, new { total = new int?(), objects = new List<T>() }, new JsonSerializerSettings() { MissingMemberHandling = MissingMemberHandling.Ignore, NullValueHandling = NullValueHandling.Ignore }).objects[0];
+                return new GetResult<T>()
+                {
+                    Result = deserialized,
+                    StatusCode = response.StatusCode
+                };
+            }
+            catch (Exception)
+            {
+                return new GetResult<T>() { StatusCode = HttpStatusCode.NotFound };
+            }
         }
 
         public async Task<PutResult<T>> UpdateAsync<T>(T item, CancellationToken cancellationToken = default)
@@ -305,6 +312,23 @@ namespace sevDesk.Api
             var restRequest = new RestRequest();
             restRequest.Resource = $"Contact";
             restRequest.Method = Method.Post;
+
+            restRequest.AddJsonBody(contact);
+
+            var response = await _restClient.ExecuteAsync(restRequest, cancellationToken);
+            var result = JsonConvert.DeserializeAnonymousType(response.Content, new { objects = new Contact() }, new JsonSerializerSettings() { MissingMemberHandling = MissingMemberHandling.Ignore }).objects;
+            return new PostResult<Contact>()
+            {
+                Result = result,
+                StatusCode = response.StatusCode
+            };
+        }
+
+        public async Task<PostResult<Contact>> UpdateContact(Contact contact, CancellationToken cancellationToken = default)
+        {
+            var restRequest = new RestRequest();
+            restRequest.Resource = $"Contact";
+            restRequest.Method = Method.Put;
 
             restRequest.AddJsonBody(contact);
 
