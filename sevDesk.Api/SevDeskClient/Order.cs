@@ -78,7 +78,7 @@ namespace SevDeskClient
         public string DeliveryTerms { get; set; }
 
         [JsonProperty("sendDate")]
-        public DateTime SendDate { get; set; }
+        public DateTime? SendDate { get; set; }
 
         [JsonProperty("orderType")]
         public string OrderType { get; set; }

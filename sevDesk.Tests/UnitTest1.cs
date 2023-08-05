@@ -277,7 +277,7 @@ namespace sevDesk.Tests
             var request = new CreateOrderRequest()
             {
                 Address = "Arndt Bieberstein\nIm Neuneck 2/1\n78609 Tuningen",
-                Contact = customer,
+                Customer = customer,
                 ContactPerson = contactPerson,
                 Currency = "EUR",
                 CustomerInternalNote = "CustomerInternalNote",

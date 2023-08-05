@@ -2,6 +2,7 @@
 using SevDeskClient;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -385,7 +386,7 @@ namespace sevDesk.Api
             var order = new Order()
             {
                 Address = request.Address,
-                Contact = request.Contact.Convert(),
+                Contact = request.Customer.Convert(),
                 ContactPerson = request.ContactPerson.Convert(),
                 Currency = request.Currency,
                 CustomerInternalNote = request.CustomerInternalNote,
@@ -424,8 +425,18 @@ namespace sevDesk.Api
             var factoryOrderResult = await _sevDeskClient.FactorySaveOrderAsync(order, orderPos, cancellationToken);
             order = factoryOrderResult.Order;
             orderPos = factoryOrderResult.OrderPos;
+            var result = order.Convert(orderPos);
 
-            return order.Convert(orderPos);
+            if (request.CreatePdf)
+            {
+                var streamResult = await _sevDeskClient.GetPdfAsync(order);
+                if (streamResult.Success)
+                {
+                    result.PdfStream = streamResult.Stream;
+                }
+            }
+
+            return result;
         }
 
         public async Task<SevDeskOrder> UpdateOrderAsync(UpdateOrderRequest updateOrderRequest, CancellationToken cancellationToken = default)
@@ -448,12 +459,18 @@ namespace sevDesk.Api
     {
         [JsonIgnore]
         public int Id { get; set; }
-        [JsonProperty(PropertyName = "status")]
-        public OrderStatus Status { get; set; }
+
+        [JsonProperty(PropertyName = "status", NullValueHandling = NullValueHandling.Ignore)]
+        public OrderStatus? Status { get; set; }
+
+        [JsonProperty(PropertyName = "status", NullValueHandling = NullValueHandling.Ignore)]
+        public DateTime? SendDate { get; set; }
     }
 
     public class CreateOrderRequest : SevDeskOrder
     {
+        public bool CreatePdf { get; set; }
+
         public List<CreateOrderLineItemRequest> CreateOrderLineItems { get; set; } = new List<CreateOrderLineItemRequest>();
     }
 
@@ -476,12 +493,13 @@ namespace sevDesk.Api
         public string Address { get; set; }
         public string SendType { get; set; } = "VPR";
         public string OrderNumber { get; set; }
-        public SevDeskCustomer Contact { get; set; }
+        public SevDeskCustomer Customer { get; set; }
         public string Header { get; set; }
         public string HeadText { get; set; }
         public string FootText { get; set; }
         public bool ShowNet { get; set; }
-        public DateTime SendDate { get; set; }
+        public DateTime? SendDate { get; set; }
+        public Stream PdfStream { get; set; }
     }
 
     public class CreateOrderLineItemRequest : SevDeskOrderLineItem { }
@@ -632,7 +650,7 @@ namespace sevDesk.Api
         {
             Id = int.Parse(order.Id),
             Address = order.Address,
-            Contact = order.Contact.Convert(),
+            Customer = order.Contact.Convert(),
             ContactPerson = order.ContactPerson.Convert(),
             Currency = order.Currency,
             CustomerInternalNote = order.CustomerInternalNote,
