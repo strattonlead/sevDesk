@@ -154,6 +154,23 @@ namespace sevDesk.Api
             };
         }
 
+        public async Task<PutResult<T>> UpdateAsync<T>(object id, object body, CancellationToken cancellationToken = default)
+           where T : SevClientObject, new()
+        {
+            var restRequest = new RestRequest();
+            restRequest.Resource = $"{_objectName<T>()}/{id}";
+            restRequest.AddJsonBody(body);
+            restRequest.RequestFormat = DataFormat.Json;
+            var response = await _restClient.PutAsync(restRequest, cancellationToken);
+
+            var deserialized = (JsonConvert.DeserializeAnonymousType(response.Content, new { objects = (T)Activator.CreateInstance(typeof(T)) }, new JsonSerializerSettings() { MissingMemberHandling = MissingMemberHandling.Ignore })).objects;
+            return new PutResult<T>()
+            {
+                Result = deserialized,
+                StatusCode = response.StatusCode
+            };
+        }
+
         public async Task<PostResult<T>> AddAsync<T>(T item, CancellationToken cancellationToken = default)
             where T : SevClientObject, new()
         {
@@ -289,6 +306,24 @@ namespace sevDesk.Api
             };
         }
 
+        public async Task<GetResult<string>> FactoryGetNextOrderNumberAsync(string orderType = "AB", bool useNextNumber = true, CancellationToken cancellationToken = default)
+        {
+            var restRequest = new RestRequest();
+            restRequest.Resource = $"Order/Factory/getNextOrderNumber";
+
+            restRequest.AddQueryParameter("orderType", orderType);
+            restRequest.AddQueryParameter("useNextNumber", useNextNumber.ToString());
+            restRequest.Method = Method.Get;
+
+            var response = await _restClient.ExecuteAsync(restRequest, cancellationToken);
+            var deserialized = JsonConvert.DeserializeAnonymousType(response.Content, new { objects = "" }, new JsonSerializerSettings() { MissingMemberHandling = MissingMemberHandling.Ignore }).objects;
+            return new GetResult<string>()
+            {
+                Result = deserialized,
+                StatusCode = response.StatusCode
+            };
+        }
+
         public async Task<GetResult<string>> FactoryGetNextInvoiceNumberAsync(string invoiceType = "RE", bool useNextNumber = true, CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest();
@@ -352,6 +387,35 @@ namespace sevDesk.Api
             return new GetResult<string>()
             {
                 Result = deserialized,
+                StatusCode = response.StatusCode
+            };
+        }
+
+        public async Task<FactoryOrderResult> FactorySaveOrderAsync(Order order, List<OrderPos> positions, CancellationToken cancellationToken = default)
+        {
+            var restRequest = new RestRequest();
+            restRequest.Resource = "Order/Factory/saveOrder";
+
+            if (string.IsNullOrWhiteSpace(order.OrderNumber))
+            {
+                var orderNumberResult = await FactoryGetNextOrderNumberAsync(order.OrderType, true, cancellationToken);
+                if (orderNumberResult.StatusCode == HttpStatusCode.OK)
+                {
+                    order.OrderNumber = orderNumberResult.Result;
+                }
+            }
+
+            restRequest.AddJsonBody(new { order = order, orderPosSave = positions });
+            restRequest.Method = Method.Post;
+
+            var response = await _restClient.ExecuteAsync(restRequest, cancellationToken);
+            var deserialized = JsonConvert.DeserializeAnonymousType(response.Content, new { objects = new { Order = new Order(), OrderPos = new List<OrderPos>() } }, new JsonSerializerSettings() { MissingMemberHandling = MissingMemberHandling.Ignore }).objects;
+            order = deserialized.Order;
+            var pos = deserialized.OrderPos;
+            return new FactoryOrderResult()
+            {
+                Order = order,
+                OrderPos = pos,
                 StatusCode = response.StatusCode
             };
         }
@@ -544,6 +608,15 @@ namespace sevDesk.Api
 
         [JsonProperty(PropertyName = "invoicePos")]
         public List<InvoicePos> InvoicePos { get; set; }
+    }
+
+    public class FactoryOrderResult : HttpStatusResult
+    {
+        [JsonProperty(PropertyName = "order")]
+        public Order Order { get; set; }
+
+        [JsonProperty(PropertyName = "orderPos")]
+        public List<OrderPos> OrderPos { get; set; }
     }
 
     public class InvoiceRenderResult : HttpStatusResult

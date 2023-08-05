@@ -123,7 +123,7 @@ namespace sevDesk.Tests
                     Id = "64658688"
                 },
                 ContactPerson = contactPerson,
-                LineItems = new List<CreateLineItemRequest>()
+                CreateLineItems = new List<CreateLineItemRequest>()
                 {
                     new CreateLineItemRequest()
                     {
@@ -187,7 +187,7 @@ namespace sevDesk.Tests
                     Description = "Ein starker Mitarbeiter"
                 },
                 ContactPerson = contactPerson,
-                LineItems = new List<CreateLineItemRequest>()
+                CreateLineItems = new List<CreateLineItemRequest>()
                 {
                     new CreateLineItemRequest()
                     {
@@ -256,6 +256,69 @@ namespace sevDesk.Tests
 
             customer = _sevDeskService.GetCustomerAsync(customer.Id).Result;
             Assert.Null(customer);
+        }
+
+        [Fact]
+        public void CRUDOrderTest()
+        {
+            var createCustomer = new CreateCustomerRequest()
+            {
+                CompanyName = "Neu erstellt",
+                FirstName = "Vorname",
+                LastName = "Nachname",
+                Title = "M.Sc",
+                ValueAddedTaxId = "DE326904432",
+                Description = "Neu erstellt"
+            };
+
+            var customer = _sevDeskService.CreateCustomerAsync(createCustomer).Result;
+            var contactPerson = _sevDeskService.GetAnyContactPerson().Result; // "777966"
+
+            var request = new CreateOrderRequest()
+            {
+                Address = "Arndt Bieberstein\nIm Neuneck 2/1\n78609 Tuningen",
+                Contact = customer,
+                ContactPerson = contactPerson,
+                Currency = "EUR",
+                CustomerInternalNote = "CustomerInternalNote",
+                FootText = "FootText",
+                HeadText = "HeadText",
+                Header = "Header",
+                OrderDate = DateTime.Now.Date,
+                OrderStatus = OrderStatus.Accepted,
+                OrderType = OrderType.Order,
+                SendDate = DateTime.Now.Date,
+                ShowNet = true,
+                TaxRate = 19,
+                TaxText = "TaxText",
+                Version = 0,
+                CreateOrderLineItems = new List<CreateOrderLineItemRequest>()
+                {
+                    new CreateOrderLineItemRequest()
+                    {
+                        Name = "Name",
+                        TaxRate = 19,
+                        Price = 100,
+                        Quantity = 1,
+                        Text = "Text",
+                        UnityType = UnityTypes.FLAT_RATE.Id
+                    }
+                }
+            };
+
+            var order = _sevDeskService.CreateOrderAsync(request).Result;
+
+            var updateRequest = new UpdateOrderRequest()
+            {
+                Id = order.Id,
+                Status = OrderStatus.RejectedOrCancelled
+            };
+            var updatedOrder = _sevDeskService.UpdateOrderAsync(updateRequest).Result;
+
+            Assert.Equal(OrderStatus.Accepted, order.OrderStatus);
+            Assert.Equal(OrderStatus.RejectedOrCancelled, updatedOrder.OrderStatus);
+
+            _sevDeskService.DeleteCustomerAsync(customer.Id).Wait();
         }
     }
 }

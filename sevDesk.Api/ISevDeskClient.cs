@@ -17,6 +17,9 @@ namespace sevDesk.Api
         Task<PutResult<T>> UpdateAsync<T>(T item, CancellationToken cancellationToken = default)
             where T : SevClientObject, new();
 
+        Task<PutResult<T>> UpdateAsync<T>(object id, object body, CancellationToken cancellationToken = default)
+           where T : SevClientObject, new();
+
         Task<PostResult<T>> AddAsync<T>(T item, CancellationToken cancellationToken = default)
             where T : SevClientObject, new();
 
@@ -42,6 +45,7 @@ namespace sevDesk.Api
             where T : SevClientObject;
         Task<PostResult<Contact>> CreateContact(Contact contact, CancellationToken cancellationToken = default);
         Task<PostResult<Contact>> UpdateContact(Contact contact, CancellationToken cancellationToken = default);
+        Task<FactoryOrderResult> FactorySaveOrderAsync(Order order, List<OrderPos> positions, CancellationToken cancellationToken = default);
 
         // TODO
         //Task<bool> CheckCustomerNumberAvailability(string customerNumber);

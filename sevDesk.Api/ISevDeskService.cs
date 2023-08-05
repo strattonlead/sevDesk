@@ -23,6 +23,8 @@ namespace sevDesk.Api
         Task<SevDeskUser> GetContactPerson(string id, CancellationToken cancellationToken = default);
         Task<SevDeskUser> GetAnyContactPerson(CancellationToken cancellationToken = default);
         Task<List<Unity>> GetUnitsAsync(CancellationToken cancellationToken = default);
+        Task<SevDeskOrder> CreateOrderAsync(CreateOrderRequest request, CancellationToken cancellationToken = default);
+        Task<SevDeskOrder> UpdateOrderAsync(UpdateOrderRequest updateOrderRequest, CancellationToken cancellationToken = default);
     }
 
     public class SevDeskCountry
@@ -97,7 +99,7 @@ namespace sevDesk.Api
         /// SevDesk User der die Rechnung erstellt hat. Wenn kein Wert gesetzt ist wird die ContactPerson verwendet
         /// </summary>
         public SevDeskUser CreatedBy { get; set; }
-        public List<CreateLineItemRequest> LineItems { get; set; } = new List<CreateLineItemRequest>();
+        public List<CreateLineItemRequest> CreateLineItems { get; set; } = new List<CreateLineItemRequest>();
 
         public string AddressName { get; set; }
         public string AddressStreet { get; set; }

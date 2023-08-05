@@ -109,4 +109,27 @@ namespace SevDeskClient
             serializer.Serialize(writer, value);
         }
     }
+
+    public class StringToBoolConverter : JsonConverter
+    {
+        public override bool CanConvert(Type objectType)
+        {
+            return true;
+        }
+
+        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        {
+            try
+            {
+                return serializer.Deserialize(reader, objectType);
+            }
+            catch { }
+            return false;
+        }
+
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        {
+            serializer.Serialize(writer, value);
+        }
+    }
 }

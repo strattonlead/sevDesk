@@ -1,4 +1,5 @@
-﻿using SevDeskClient;
+﻿using Newtonsoft.Json;
+using SevDeskClient;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -237,12 +238,12 @@ namespace sevDesk.Api
                 throw new ArgumentException("AddressCity is null");
             }
 
-            if (request.LineItems == null)
+            if (request.CreateLineItems == null)
             {
                 throw new ArgumentNullException("LineItems is null");
             }
 
-            if (!request.LineItems.Any())
+            if (!request.CreateLineItems.Any())
             {
                 throw new ArgumentException("No line items");
             }
@@ -334,7 +335,7 @@ namespace sevDesk.Api
 
             var invoicePos = new List<InvoicePos>();
             var posNumber = 0;
-            foreach (var lineItem in request.LineItems)
+            foreach (var lineItem in request.CreateLineItems)
             {
                 var pos = lineItem.Convert();
                 pos.PositionNumber = posNumber++;
@@ -375,16 +376,191 @@ namespace sevDesk.Api
             return result;
         }
 
+        /// <summary>
+        /// Angebot, Auftrag und Lieferschein 
+        /// </summary>
+        /// <returns></returns>
+        public async Task<SevDeskOrder> CreateOrderAsync(CreateOrderRequest request, CancellationToken cancellationToken = default)
+        {
+            var order = new Order()
+            {
+                Address = request.Address,
+                Contact = request.Contact.Convert(),
+                ContactPerson = request.ContactPerson.Convert(),
+                Currency = request.Currency,
+                CustomerInternalNote = request.CustomerInternalNote,
+                //DeliveryTerms = 0,
+                FootText = request.FootText,
+                Header = request.Header,
+                HeadText = request.HeadText,
+                OrderDate = request.OrderDate,
+                OrderNumber = request.OrderNumber,
+                OrderType = request.OrderType.Convert(),
+                Origin = request.Origin,
+                //PaymentTerms = 0,
+                SendDate = request.SendDate,
+                ShowNet = request.ShowNet,
+                SendType = request.SendType,
+                SmallSettlement = false,
+                Status = request.OrderStatus.Convert(),
+                TaxRate = request.TaxRate,
+                //TaxSet = "",
+                TaxText = request.TaxText,
+                TaxType = request.TaxType,
+                //TypeOrigin = "",
+                Version = request.Version
+            };
+
+            var orderPos = new List<OrderPos>();
+            var posNumber = 0;
+            foreach (var lineItem in request.CreateOrderLineItems)
+            {
+                var pos = lineItem.Convert();
+                pos.PositionNumber = posNumber++;
+                //pos.Order = new Order();
+                orderPos.Add(pos);
+            }
+
+            var factoryOrderResult = await _sevDeskClient.FactorySaveOrderAsync(order, orderPos, cancellationToken);
+            order = factoryOrderResult.Order;
+            orderPos = factoryOrderResult.OrderPos;
+
+            return order.Convert(orderPos);
+        }
+
+        public async Task<SevDeskOrder> UpdateOrderAsync(UpdateOrderRequest updateOrderRequest, CancellationToken cancellationToken = default)
+        {
+            var updateResult = await _sevDeskClient.UpdateAsync<Order>(updateOrderRequest.Id, updateOrderRequest, cancellationToken);
+            if (!updateResult.Success)
+            {
+                return null;
+            }
+
+            return updateResult.Result.Convert();
+        }
+
 
         #endregion
     }
+
+
+    public class UpdateOrderRequest
+    {
+        [JsonIgnore]
+        public int Id { get; set; }
+        [JsonProperty(PropertyName = "status")]
+        public OrderStatus Status { get; set; }
+    }
+
+    public class CreateOrderRequest : SevDeskOrder
+    {
+        public List<CreateOrderLineItemRequest> CreateOrderLineItems { get; set; } = new List<CreateOrderLineItemRequest>();
+    }
+
+    public class SevDeskOrder
+    {
+        public int Id { get; set; }
+#warning TODO als result machen
+        public List<SevDeskOrderLineItem> LineItems { get; set; }
+        public string TaxType { get; set; }
+        public string Currency { get; set; } = "EUR";
+        public string CustomerInternalNote { get; set; }
+        public int Version { get; set; }
+        public string TaxText { get; set; } = "zzgl. Umsatzsteuer 19%";
+        public int TaxRate { get; set; }
+        public OrderType OrderType { get; set; }
+        public int Origin { get; set; }
+        public OrderStatus OrderStatus { get; set; }
+        public SevDeskUser ContactPerson { get; set; }
+        public DateTime OrderDate { get; set; }
+        public string Address { get; set; }
+        public string SendType { get; set; } = "VPR";
+        public string OrderNumber { get; set; }
+        public SevDeskCustomer Contact { get; set; }
+        public string Header { get; set; }
+        public string HeadText { get; set; }
+        public string FootText { get; set; }
+        public bool ShowNet { get; set; }
+        public DateTime SendDate { get; set; }
+    }
+
+    public class CreateOrderLineItemRequest : SevDeskOrderLineItem { }
+
+    public class SevDeskOrderLineItem
+    {
+        public int Id { get; set; }
+        public decimal TaxRate { get; set; }
+        public string UnityType { get; set; }
+        public decimal Quantity { get; set; }
+        public decimal Discount { get; set; }
+        public string Text { get; set; }
+        public string Name { get; set; }
+        public decimal Price { get; set; }
+    }
+
+    public enum OrderType
+    {
+        /// <summary>
+        /// Angebot | AN
+        /// </summary>
+        Proposal = 0,
+
+        /// <summary>
+        /// Angebot | AB
+        /// </summary>
+        Order = 1,
+
+        /// <summary>
+        /// Lieferschein | LI
+        /// </summary>
+        DeliveryNote = 2
+    }
+
+    public enum OrderStatus
+    {
+        /// <summary>
+        /// The order is still a draft. 
+        /// It has not been sent to the end-customer and can still be changed.
+        /// </summary>
+        Draft = 100,
+
+        /// <summary>
+        /// The order has been sent to the end-customer.
+        /// </summary>
+        Delivered = 200,
+
+        /// <summary>
+        /// The order has been rejected by the end-customer.
+        /// </summary>
+        RejectedOrCancelled = 300,
+
+        /// <summary>
+        /// The order has been accepted by the end-customer.
+        /// </summary>
+        Accepted = 500,
+
+        /// <summary>
+        /// An invoice for parts of the order (but not the full order) has been created.
+        /// </summary>
+        PartiallyCalculated = 750,
+
+        /// <summary>
+        /// The order has been calculated.
+        /// One or more invoices have been created covering the whole order.
+        /// </summary>
+        Calculated = 1000
+    }
+
+
 
     internal static class ConverterExtensions
     {
         internal static Func<StaticCountry, SevDeskCountry> _countryConverter = x => new SevDeskCountry() { Id = x.Id, Name = x.Name, Code = x.Code };
         internal static Func<InvoicePos, SevDeskLineItem> _lineItemConverter = x => new SevDeskLineItem() { Id = x.Id, Name = x.Name, PriceNet = x.PriceNet, Quantity = x.Quantity, TaxRate = x.TaxRate, Text = x.Text, UnityType = x.unity?.Id };
+        internal static Func<OrderPos, SevDeskOrderLineItem> _orderLineItemConverter = x => new SevDeskOrderLineItem() { /*Id = x.Id,*/ Discount = x.Discount, Name = x.Name, Price = x.Price, Quantity = x.Quantity, TaxRate = x.TaxRate, Text = x.Text, UnityType = x.Unity?.Id };
         internal static List<SevDeskCountry> Convert(this IEnumerable<StaticCountry> countries) => countries?.Select(_countryConverter)?.ToList();
         internal static List<SevDeskLineItem> Convert(this IEnumerable<InvoicePos> lineItems) => lineItems?.Select(_lineItemConverter)?.ToList();
+        internal static List<SevDeskOrderLineItem> Convert(this IEnumerable<OrderPos> lineItems) => lineItems?.Select(_orderLineItemConverter)?.ToList();
 
         internal static Contact Convert(this CreateCustomerRequest customer) => new Contact()
         {
@@ -409,5 +585,72 @@ namespace sevDesk.Api
         internal static SevDeskUser Convert(this SevUser user) => new SevDeskUser() { Id = user.Id, Email = user.Email, FirstName = user.FirstName, Fullname = user.Fullname, LastName = user.LastName, Username = user.Username };
         internal static SevDeskCountry Convert(this StaticCountry country) => _countryConverter(country);
         internal static InvoicePos Convert(this CreateLineItemRequest lineItem) => new InvoicePos() { Name = lineItem.Name, PriceNet = lineItem.PriceNet, Quantity = lineItem.Quantity, Text = lineItem.Text, unity = UnityTypes.GetUnity(lineItem.UnityType) };
+        internal static OrderPos Convert(this CreateOrderLineItemRequest lineItem) => new OrderPos()
+        {
+            Name = lineItem.Name,
+            Price = lineItem.Price,
+            Quantity = lineItem.Quantity,
+            Text = lineItem.Text,
+            Unity = UnityTypes.GetUnity(lineItem.UnityType),
+            Discount = lineItem.Discount,
+            TaxRate = lineItem.TaxRate
+        };
+
+        internal static string Convert(this OrderType orderType)
+        {
+            switch (orderType)
+            {
+                case OrderType.Proposal:
+                    return "AN";
+                case OrderType.Order:
+                    return "AB";
+                case OrderType.DeliveryNote:
+                    return "LI";
+                default:
+                    return null;
+            }
+        }
+
+        internal static OrderType GetOrderType(string orderType)
+        {
+            switch (orderType)
+            {
+                case "AN":
+                    return OrderType.Proposal;
+                case "AB":
+                    return OrderType.Order;
+                case "LI":
+                    return OrderType.DeliveryNote;
+                default:
+                    return OrderType.Proposal;
+            }
+        }
+
+        internal static int Convert(this OrderStatus orderStatus) => (int)orderStatus;
+
+        internal static SevDeskOrder Convert(this Order order, List<OrderPos> orderPos = null) => new SevDeskOrder()
+        {
+            Id = int.Parse(order.Id),
+            Address = order.Address,
+            Contact = order.Contact.Convert(),
+            ContactPerson = order.ContactPerson.Convert(),
+            Currency = order.Currency,
+            CustomerInternalNote = order.CustomerInternalNote,
+            FootText = order.FootText,
+            Header = order.Header,
+            HeadText = order.HeadText,
+            OrderDate = order.OrderDate,
+            OrderNumber = order.OrderNumber,
+            OrderStatus = (OrderStatus)order.Status,
+            OrderType = GetOrderType(order.OrderType),
+            Origin = order.Origin,
+            SendDate = order.SendDate,
+            SendType = order.SendType,
+            ShowNet = order.ShowNet,
+            TaxRate = order.TaxRate,
+            TaxText = order.TaxText,
+            TaxType = order.TaxType,
+            LineItems = orderPos?.Convert()
+        };
     }
 }
