@@ -118,7 +118,7 @@ namespace sevDesk.Tests
                 DeliveryDate = DateTime.Now.Date,
                 CreatePdf = true,
                 TimeToPay = 30,
-                Customer = new SevDeskCustomer()
+                Customer = new SevDeskContact()
                 {
                     Id = "64658688"
                 },
@@ -177,7 +177,7 @@ namespace sevDesk.Tests
                 DeliveryDate = DateTime.Now.Date,
                 CreatePdf = true,
                 TimeToPay = 30,
-                CreateCustomer = new CreateCustomerRequest()
+                CreateCustomer = new CreateContactRequest()
                 {
                     CompanyName = "Löffel GmbH",
                     FirstName = "Simon",
@@ -226,7 +226,7 @@ namespace sevDesk.Tests
         [Fact]
         public void CRUDCustomerTest()
         {
-            var request = new CreateCustomerRequest()
+            var request = new CreateContactRequest()
             {
                 CompanyName = "Neu erstellt",
                 FirstName = "Vorname",
@@ -236,32 +236,32 @@ namespace sevDesk.Tests
                 Description = "Neu erstellt"
             };
 
-            var customer = _sevDeskService.CreateCustomerAsync(request).Result;
+            var customer = _sevDeskService.CreateContactAsync(request).Result;
 
             var updateRequest = new UpdateCustomerRequest(customer);
             updateRequest.FirstName = "Neuer Name";
             updateRequest.LastName = "Neuer Nachname";
-            customer = _sevDeskService.UpdateCustomerAsync(updateRequest).Result;
+            customer = _sevDeskService.UpdateContactAsync(updateRequest).Result;
 
             Assert.Equal(updateRequest.FirstName, customer.FirstName);
             Assert.Equal(updateRequest.LastName, customer.LastName);
 
-            customer = _sevDeskService.GetCustomerAsync(customer.Id).Result;
+            customer = _sevDeskService.GetContactAsync(customer.Id).Result;
 
             Assert.Equal(updateRequest.FirstName, customer.FirstName);
             Assert.Equal(updateRequest.LastName, customer.LastName);
 
-            var success = _sevDeskService.DeleteCustomerAsync(customer.Id).Result;
+            var success = _sevDeskService.DeleteContactAsync(customer.Id).Result;
             Assert.True(success);
 
-            customer = _sevDeskService.GetCustomerAsync(customer.Id).Result;
+            customer = _sevDeskService.GetContactAsync(customer.Id).Result;
             Assert.Null(customer);
         }
 
         [Fact]
         public void CRUDOrderTest()
         {
-            var createCustomer = new CreateCustomerRequest()
+            var createCustomer = new CreateContactRequest()
             {
                 CompanyName = "Neu erstellt",
                 FirstName = "Vorname",
@@ -271,7 +271,7 @@ namespace sevDesk.Tests
                 Description = "Neu erstellt"
             };
 
-            var customer = _sevDeskService.CreateCustomerAsync(createCustomer).Result;
+            var customer = _sevDeskService.CreateContactAsync(createCustomer).Result;
             var contactPerson = _sevDeskService.GetAnyContactPerson().Result; // "777966"
 
             var request = new CreateOrderRequest()
@@ -318,7 +318,7 @@ namespace sevDesk.Tests
             Assert.Equal(OrderStatus.Accepted, order.OrderStatus);
             Assert.Equal(OrderStatus.RejectedOrCancelled, updatedOrder.OrderStatus);
 
-            _sevDeskService.DeleteCustomerAsync(customer.Id).Wait();
+            _sevDeskService.DeleteContactAsync(customer.Id).Wait();
         }
 
         [Fact]

@@ -16,10 +16,12 @@ namespace sevDesk.Api
         Task<SevDeskCountry> GetCountryAsync(string code, CancellationToken cancellationToken = default);
         Task<List<SevDeskCountry>> GetCountriesAsync(CancellationToken cancellationToken = default);
         Task<SevDeskInvoice> CreateInvoiceAsync(CreateInvoiceRequest createInvoiceRequest, CancellationToken cancellationToken = default);
-        Task<SevDeskCustomer> CreateCustomerAsync(CreateCustomerRequest createCustomerRequest, CancellationToken cancellationToken = default);
-        Task<SevDeskCustomer> UpdateCustomerAsync(UpdateCustomerRequest updateCustomerRequest, CancellationToken cancellationToken = default);
-        Task<bool> DeleteCustomerAsync(string id, CancellationToken cancellationToken = default);
-        Task<SevDeskCustomer> GetCustomerAsync(string id, CancellationToken cancellationToken = default);
+
+        Task<SevDeskContact> CreateContactAsync(CreateContactRequest createCustomerRequest, CancellationToken cancellationToken = default);
+        Task<SevDeskContact> UpdateContactAsync(UpdateCustomerRequest updateCustomerRequest, CancellationToken cancellationToken = default);
+        Task<bool> DeleteContactAsync(string id, CancellationToken cancellationToken = default);
+        Task<SevDeskContact> GetContactAsync(string id, CancellationToken cancellationToken = default);
+
         Task<SevDeskUser> GetContactPerson(string id, CancellationToken cancellationToken = default);
         Task<SevDeskUser> GetAnyContactPerson(CancellationToken cancellationToken = default);
         Task<List<Unity>> GetUnitsAsync(CancellationToken cancellationToken = default);
@@ -38,18 +40,19 @@ namespace sevDesk.Api
     /// <summary>
     /// Gemapped auf Contact
     /// </summary>
-    public class SevDeskCustomer : CreateCustomerRequest
+    public class SevDeskContact : CreateContactRequest
     {
         public string Id { get; set; }
     }
 
-    public class CreateCustomerRequest
+    public class CreateContactRequest
     {
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string Title { get; set; }
         public string Description { get; set; }
         public string CompanyName { get; set; }
+        public string ContactType { get; set; } = ContactTypes.Customer;
 
         /// <summary>
         /// Umsatzsteuer ID
@@ -57,10 +60,18 @@ namespace sevDesk.Api
         public string ValueAddedTaxId { get; set; }
     }
 
-    public class UpdateCustomerRequest : SevDeskCustomer
+    public class ContactTypes
+    {
+        public const string Supplier = "2";
+        public const string Customer = "3";
+        public const string Partner = "4";
+        public const string ProspectCustomer = "28";
+    }
+
+    public class UpdateCustomerRequest : SevDeskContact
     {
         public UpdateCustomerRequest() { }
-        public UpdateCustomerRequest(SevDeskCustomer customer)
+        public UpdateCustomerRequest(SevDeskContact customer)
         {
             Id = customer.Id;
             FirstName = customer.FirstName;
@@ -88,8 +99,8 @@ namespace sevDesk.Api
     public class CreateInvoiceRequest
     {
         public SevDeskCountry AddressCountry { get; set; }
-        public SevDeskCustomer Customer { get; set; }
-        public CreateCustomerRequest CreateCustomer { get; set; }
+        public SevDeskContact Customer { get; set; }
+        public CreateContactRequest CreateCustomer { get; set; }
 
         /// <summary>
         /// Kontaktperson im Unternehmen
@@ -285,7 +296,7 @@ namespace sevDesk.Api
         public string Id { get; set; }
         public string InvoiceNumber { get; set; }
         public SevDeskCountry AddressCountry { get; set; }
-        public SevDeskCustomer Customer { get; set; }
+        public SevDeskContact Customer { get; set; }
         public SevDeskUser ContactPerson { get; set; }
         public List<SevDeskLineItem> LineItems { get; set; }
 
