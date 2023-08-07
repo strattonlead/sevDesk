@@ -450,6 +450,17 @@ namespace sevDesk.Api
             return updateResult.Result.Convert();
         }
 
+        public async Task<string> GetNextOrderNumberAsync(OrderType orderType, CancellationToken cancellationToken = default)
+        {
+            var type = orderType.Convert();
+            var getResult = await _sevDeskClient.FactoryGetNextOrderNumberAsync(type, false, cancellationToken);
+            if (!getResult.Success)
+            {
+                return null;
+            }
+
+            return getResult.Result;
+        }
 
         #endregion
     }
@@ -524,7 +535,7 @@ namespace sevDesk.Api
         Proposal = 0,
 
         /// <summary>
-        /// Angebot | AB
+        /// Auftragsbestätitung | AB
         /// </summary>
         Order = 1,
 

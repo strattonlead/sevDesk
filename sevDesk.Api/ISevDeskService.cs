@@ -25,6 +25,7 @@ namespace sevDesk.Api
         Task<List<Unity>> GetUnitsAsync(CancellationToken cancellationToken = default);
         Task<SevDeskOrder> CreateOrderAsync(CreateOrderRequest request, CancellationToken cancellationToken = default);
         Task<SevDeskOrder> UpdateOrderAsync(UpdateOrderRequest updateOrderRequest, CancellationToken cancellationToken = default);
+        Task<string> GetNextOrderNumberAsync(OrderType orderType, CancellationToken cancellationToken = default);
     }
 
     public class SevDeskCountry

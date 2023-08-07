@@ -5,8 +5,8 @@
 	<ImplicitUsings>enable</ImplicitUsings>
 	<Nullable>enable</Nullable>
 	<PackageId>CreateIf.sevDesk.Api.DependencyInjection</PackageId>
-	<Version>1.0.6</Version>
-	<PackageVersion>1.0.6</PackageVersion>
+	<Version>1.0.7</Version>
+	<PackageVersion>1.0.7</PackageVersion>
 	<Authors>Arndt Bieberstein</Authors>
 	<Company>createIF Labs GmbH</Company>
 	<EnablePackageValidation>true</EnablePackageValidation>

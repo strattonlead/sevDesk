@@ -320,5 +320,14 @@ namespace sevDesk.Tests
 
             _sevDeskService.DeleteCustomerAsync(customer.Id).Wait();
         }
+
+        [Fact]
+        public void OrderNumberTest()
+        {
+            var orderNumber1 = _sevDeskService.GetNextOrderNumberAsync(OrderType.Order).Result;
+            var orderNumber2 = _sevDeskService.GetNextOrderNumberAsync(OrderType.Order).Result;
+
+            Assert.Equal(orderNumber2, orderNumber1);
+        }
     }
 }

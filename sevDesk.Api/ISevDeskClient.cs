@@ -50,6 +50,7 @@ namespace sevDesk.Api
         // TODO
         //Task<bool> CheckCustomerNumberAvailability(string customerNumber);
         Task<GetResult<string>> FactoryGetNextCustomerNumberAsync(CancellationToken cancellationToken = default);
+        Task<GetResult<string>> FactoryGetNextOrderNumberAsync(string orderType = "AB", bool useNextNumber = true, CancellationToken cancellationToken = default);
 
     }
 }
