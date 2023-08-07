@@ -238,7 +238,7 @@ namespace sevDesk.Tests
 
             var customer = _sevDeskService.CreateContactAsync(request).Result;
 
-            var updateRequest = new UpdateCustomerRequest(customer);
+            var updateRequest = new UpdateContactRequest(customer);
             updateRequest.FirstName = "Neuer Name";
             updateRequest.LastName = "Neuer Nachname";
             customer = _sevDeskService.UpdateContactAsync(updateRequest).Result;

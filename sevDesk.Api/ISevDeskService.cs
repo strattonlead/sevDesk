@@ -18,7 +18,7 @@ namespace sevDesk.Api
         Task<SevDeskInvoice> CreateInvoiceAsync(CreateInvoiceRequest createInvoiceRequest, CancellationToken cancellationToken = default);
 
         Task<SevDeskContact> CreateContactAsync(CreateContactRequest createCustomerRequest, CancellationToken cancellationToken = default);
-        Task<SevDeskContact> UpdateContactAsync(UpdateCustomerRequest updateCustomerRequest, CancellationToken cancellationToken = default);
+        Task<SevDeskContact> UpdateContactAsync(UpdateContactRequest updateCustomerRequest, CancellationToken cancellationToken = default);
         Task<bool> DeleteContactAsync(string id, CancellationToken cancellationToken = default);
         Task<SevDeskContact> GetContactAsync(string id, CancellationToken cancellationToken = default);
 
@@ -68,10 +68,10 @@ namespace sevDesk.Api
         public const string ProspectCustomer = "28";
     }
 
-    public class UpdateCustomerRequest : SevDeskContact
+    public class UpdateContactRequest : SevDeskContact
     {
-        public UpdateCustomerRequest() { }
-        public UpdateCustomerRequest(SevDeskContact customer)
+        public UpdateContactRequest() { }
+        public UpdateContactRequest(SevDeskContact customer)
         {
             Id = customer.Id;
             FirstName = customer.FirstName;

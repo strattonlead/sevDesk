@@ -75,7 +75,7 @@ namespace sevDesk.Api
          * Prospect Customer (ID: 28)
          */
 
-        public async Task<SevDeskContact> CreateContactAsync(CreateContactRequest createCustomerRequest, CancellationToken cancellationToken = default)
+        public async Task<SevDeskContact> CreateContactAsync(CreateContactRequest createContactRequest, CancellationToken cancellationToken = default)
         {
             var getCustomerNumberResult = await _sevDeskClient.FactoryGetNextCustomerNumberAsync(cancellationToken);
             if (!getCustomerNumberResult.Success)
@@ -83,11 +83,7 @@ namespace sevDesk.Api
                 return null;
             }
 
-            var contact = createCustomerRequest.Convert();
-            contact.Category = new Category()
-            {
-                Id = "3"
-            };
+            var contact = createContactRequest.Convert();
             contact.CustomerNumber = getCustomerNumberResult.Result;
 
             var postResult = await _sevDeskClient.CreateContact(contact, cancellationToken);
@@ -99,14 +95,9 @@ namespace sevDesk.Api
             return postResult.Result.Convert();
         }
 
-        public async Task<SevDeskContact> UpdateContactAsync(UpdateCustomerRequest updateCustomerRequest, CancellationToken cancellationToken = default)
+        public async Task<SevDeskContact> UpdateContactAsync(UpdateContactRequest updateContactRequest, CancellationToken cancellationToken = default)
         {
-            var contact = updateCustomerRequest.Convert();
-            contact.Category = new Category()
-            {
-                Id = "3"
-            };
-
+            var contact = updateContactRequest.Convert();
             var postResult = await _sevDeskClient.UpdateAsync(contact, cancellationToken);
             if (!postResult.Success)
             {
@@ -600,7 +591,11 @@ namespace sevDesk.Api
             Familyname = customer.LastName,
             Surename = customer.FirstName,
             Titel = customer.Title,
-            Description = customer.Description
+            Description = customer.Description,
+            Category = new Category()
+            {
+                Id = customer.ContactType
+            }
         };
 
         internal static Contact Convert(this SevDeskContact customer)
