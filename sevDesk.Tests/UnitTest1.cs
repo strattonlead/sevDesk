@@ -329,5 +329,19 @@ namespace sevDesk.Tests
 
             Assert.Equal(orderNumber2, orderNumber1);
         }
+
+        [Fact]
+        public void SupplierTest()
+        {
+            var contact = _sevDeskService.CreateContactAsync(new CreateContactRequest()
+            {
+                CompanyName = "TEST GmbH",
+                ContactType = ContactTypes.Supplier,
+                FirstName = "SupplierTest",
+                LastName = "SupplierTest"
+            }).Result;
+
+            Assert.Equal(ContactTypes.Supplier, contact.ContactType);
+        }
     }
 }

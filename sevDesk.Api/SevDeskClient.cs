@@ -28,6 +28,7 @@ namespace sevDesk.Api
             _options = options;
             _restClient = new RestClient(new Uri("https://my.sevdesk.de/api/v1/"));
             _restClient.AddDefaultHeader("Authorization", _options.Token);
+            _restClient.Options.ThrowOnAnyError = false;
 
             var defaultSettings = new JsonSerializerSettings
             {
@@ -409,9 +410,10 @@ namespace sevDesk.Api
             restRequest.Method = Method.Post;
 
             var response = await _restClient.ExecuteAsync(restRequest, cancellationToken);
+
             var deserialized = JsonConvert.DeserializeAnonymousType(response.Content, new { objects = new { Order = new Order(), OrderPos = new List<OrderPos>() } }, new JsonSerializerSettings() { MissingMemberHandling = MissingMemberHandling.Ignore }).objects;
-            order = deserialized.Order;
-            var pos = deserialized.OrderPos;
+            order = deserialized?.Order;
+            var pos = deserialized?.OrderPos;
             return new FactoryOrderResult()
             {
                 Order = order,

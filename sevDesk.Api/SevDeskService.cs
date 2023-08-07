@@ -478,7 +478,7 @@ namespace sevDesk.Api
         [JsonProperty(PropertyName = "status", NullValueHandling = NullValueHandling.Ignore)]
         public OrderStatus? Status { get; set; }
 
-        [JsonProperty(PropertyName = "status", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(PropertyName = "sendDate", NullValueHandling = NullValueHandling.Ignore)]
         public DateTime? SendDate { get; set; }
     }
 
