@@ -279,7 +279,7 @@ namespace sevDesk.Tests
                 Address = "Arndt Bieberstein\nIm Neuneck 2/1\n78609 Tuningen",
                 Contact = customer,
                 ContactPerson = contactPerson,
-                Currency = "EUR",
+                //Currency = "EUR",
                 CustomerInternalNote = "CustomerInternalNote",
                 //FootText = "FootText",
                 //HeadText = "HeadText",
