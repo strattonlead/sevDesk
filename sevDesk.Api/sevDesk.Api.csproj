@@ -5,8 +5,8 @@
 	<ImplicitUsings>disable</ImplicitUsings>
 	<Nullable>disable</Nullable>
 	<PackageId>CreateIf.sevDesk.Api</PackageId>
-	<Version>1.0.9</Version>
-	<PackageVersion>1.0.9</PackageVersion>
+	<Version>1.0.10</Version>
+	<PackageVersion>1.0.10</PackageVersion>
 	<Authors>Arndt Bieberstein</Authors>
 	<Company>createIF Labs GmbH</Company>
 	<EnablePackageValidation>true</EnablePackageValidation>

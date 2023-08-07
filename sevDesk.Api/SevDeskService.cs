@@ -454,6 +454,18 @@ namespace sevDesk.Api
             return getResult.Result;
         }
 
+        public async Task<SevDeskContact> EnsureCreatedAsync(SevDeskContact contact, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                return await GetContactAsync(contact.Id, cancellationToken);
+            }
+            catch (Exception)
+            {
+                return await CreateContactAsync(contact, cancellationToken);
+            }
+        }
+
         #endregion
     }
 

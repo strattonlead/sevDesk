@@ -281,8 +281,8 @@ namespace sevDesk.Tests
                 ContactPerson = contactPerson,
                 Currency = "EUR",
                 CustomerInternalNote = "CustomerInternalNote",
-                FootText = "FootText",
-                HeadText = "HeadText",
+                //FootText = "FootText",
+                //HeadText = "HeadText",
                 Header = "Header",
                 OrderDate = DateTime.Now.Date,
                 OrderStatus = OrderStatus.Accepted,
@@ -290,7 +290,7 @@ namespace sevDesk.Tests
                 SendDate = DateTime.Now.Date,
                 ShowNet = true,
                 TaxRate = 19,
-                TaxText = "TaxText",
+                //TaxText = "TaxText",
                 Version = 0,
                 CreateOrderLineItems = new List<CreateOrderLineItemRequest>()
                 {
