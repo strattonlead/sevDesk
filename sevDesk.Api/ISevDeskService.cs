@@ -99,8 +99,8 @@ namespace sevDesk.Api
     public class CreateInvoiceRequest
     {
         public SevDeskCountry AddressCountry { get; set; }
-        public SevDeskContact Customer { get; set; }
-        public CreateContactRequest CreateCustomer { get; set; }
+        public SevDeskContact Contact { get; set; }
+        public CreateContactRequest CreateContact { get; set; }
 
         /// <summary>
         /// Kontaktperson im Unternehmen
@@ -296,7 +296,7 @@ namespace sevDesk.Api
         public string Id { get; set; }
         public string InvoiceNumber { get; set; }
         public SevDeskCountry AddressCountry { get; set; }
-        public SevDeskContact Customer { get; set; }
+        public SevDeskContact Contact { get; set; }
         public SevDeskUser ContactPerson { get; set; }
         public List<SevDeskLineItem> LineItems { get; set; }
 

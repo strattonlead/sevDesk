@@ -260,26 +260,26 @@ namespace sevDesk.Api
 
             var taxRate = GetDefaultTaxRate(taxType);
 
-            if (request.Customer != null && request.CreateCustomer != null)
+            if (request.Contact != null && request.CreateContact != null)
             {
                 throw new ArgumentException("Ambingious customer.");
             }
 
-            if (request.Customer == null && request.CreateCustomer == null)
+            if (request.Contact == null && request.CreateContact == null)
             {
                 throw new ArgumentException("Customer and CreateCustomer is null");
             }
 
-            var customer = request.Customer;
+            var customer = request.Contact;
             Contact contact = null;
-            if (request.Customer != null)
+            if (request.Contact != null)
             {
-                contact = request.Customer.Convert();
+                contact = request.Contact.Convert();
             }
 
-            if (request.CreateCustomer != null)
+            if (request.CreateContact != null)
             {
-                customer = await CreateContactAsync(request.CreateCustomer, cancellationToken);
+                customer = await CreateContactAsync(request.CreateContact, cancellationToken);
                 contact = customer.Convert();
             }
 
@@ -346,7 +346,7 @@ namespace sevDesk.Api
                 AddressCountry = request.AddressCountry,
                 Address = invoice.Address,
                 ContactPerson = request.ContactPerson,
-                Customer = customer,
+                Contact = customer,
                 DeliveryDate = invoice.DeliveryDate,
                 InvoiceDate = invoice.InvoiceDate.Value,
                 TaxRate = invoice.TaxRate,
@@ -378,7 +378,7 @@ namespace sevDesk.Api
             var order = new Order()
             {
                 Address = request.Address,
-                Contact = request.Customer.Convert(),
+                Contact = request.Contact.Convert(),
                 ContactPerson = request.ContactPerson.Convert(),
                 Currency = request.Currency,
                 CustomerInternalNote = request.CustomerInternalNote,
@@ -496,7 +496,7 @@ namespace sevDesk.Api
         public string Address { get; set; }
         public string SendType { get; set; } = "VPR";
         public string OrderNumber { get; set; }
-        public SevDeskContact Customer { get; set; }
+        public SevDeskContact Contact { get; set; }
         public string Header { get; set; }
         public string HeadText { get; set; }
         public string FootText { get; set; }
@@ -657,7 +657,7 @@ namespace sevDesk.Api
         {
             Id = int.Parse(order.Id),
             Address = order.Address,
-            Customer = order.Contact.Convert(),
+            Contact = order.Contact.Convert(),
             ContactPerson = order.ContactPerson.Convert(),
             Currency = order.Currency,
             CustomerInternalNote = order.CustomerInternalNote,

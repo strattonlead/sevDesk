@@ -118,7 +118,7 @@ namespace sevDesk.Tests
                 DeliveryDate = DateTime.Now.Date,
                 CreatePdf = true,
                 TimeToPay = 30,
-                Customer = new SevDeskContact()
+                Contact = new SevDeskContact()
                 {
                     Id = "64658688"
                 },
@@ -177,7 +177,7 @@ namespace sevDesk.Tests
                 DeliveryDate = DateTime.Now.Date,
                 CreatePdf = true,
                 TimeToPay = 30,
-                CreateCustomer = new CreateContactRequest()
+                CreateContact = new CreateContactRequest()
                 {
                     CompanyName = "Löffel GmbH",
                     FirstName = "Simon",
@@ -277,7 +277,7 @@ namespace sevDesk.Tests
             var request = new CreateOrderRequest()
             {
                 Address = "Arndt Bieberstein\nIm Neuneck 2/1\n78609 Tuningen",
-                Customer = customer,
+                Contact = customer,
                 ContactPerson = contactPerson,
                 Currency = "EUR",
                 CustomerInternalNote = "CustomerInternalNote",
