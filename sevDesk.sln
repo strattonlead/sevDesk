@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "sevDesk.Api", "sevDesk.Api\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "sevDesk.Api.DependencyInjection", "sevDesk.Api.DependencyInjection\sevDesk.Api.DependencyInjection.csproj", "{87ABF63F-A541-469E-BBD7-11ECDEBD0A3D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sevDesk.Tests", "sevDesk.Tests\sevDesk.Tests.csproj", "{9BD8E83A-BD27-4968-A703-658EB3C542D4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "sevDesk.Tests", "sevDesk.Tests\sevDesk.Tests.csproj", "{9BD8E83A-BD27-4968-A703-658EB3C542D4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

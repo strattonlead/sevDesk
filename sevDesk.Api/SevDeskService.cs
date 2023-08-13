@@ -415,6 +415,11 @@ namespace sevDesk.Api
             }
 
             var factoryOrderResult = await _sevDeskClient.FactorySaveOrderAsync(order, orderPos, cancellationToken);
+            if (!factoryOrderResult.Success)
+            {
+                throw new Exception($"Status Code {factoryOrderResult.StatusCode}");
+            }
+
             order = factoryOrderResult.Order;
             orderPos = factoryOrderResult.OrderPos;
             var result = order.Convert(orderPos);
