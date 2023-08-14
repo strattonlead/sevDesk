@@ -410,6 +410,13 @@ namespace sevDesk.Api
             restRequest.Method = Method.Post;
 
             var response = await _restClient.ExecuteAsync(restRequest, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                return new FactoryOrderResult()
+                {
+                    StatusCode = response.StatusCode
+                };
+            }
 
             var deserialized = JsonConvert.DeserializeAnonymousType(response.Content, new { objects = new { Order = new Order(), OrderPos = new List<OrderPos>() } }, new JsonSerializerSettings() { MissingMemberHandling = MissingMemberHandling.Ignore }).objects;
             order = deserialized?.Order;

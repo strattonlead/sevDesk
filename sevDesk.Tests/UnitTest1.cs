@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using sevDesk.Api;
 using SevDeskClient;
 using System;
@@ -342,6 +343,15 @@ namespace sevDesk.Tests
             }).Result;
 
             Assert.Equal(ContactTypes.Supplier, contact.ContactType);
+        }
+
+        [Fact]
+        public void JsonTest()
+        {
+            var data = "{\"CreatePdf\":true,\"CreateOrderLineItems\":[],\"Id\":0,\"LineItems\":null,\"TaxType\":null,\"Currency\":null,\"CustomerInternalNote\":\"Logihero CN123\",\"Version\":0,\"TaxText\":\"zzgl. Umsatzsteuer 19%\",\"TaxRate\":0,\"OrderType\":1,\"Origin\":0,\"OrderStatus\":500,\"ContactPerson\":{\"Id\":\"777966\",\"Fullname\":\"Arndt Bieberstein\",\"FirstName\":\"Arndt\",\"LastName\":\"Bieberstein\",\"Username\":\"arndt.bieberstein@gmail.com\",\"Email\":\"arndt.bieberstein@gmail.com\"},\"OrderDate\":\"0001-01-01T00:00:00\",\"Address\":\"Harald GmbH\\nHarald Müller\\nHauptstraße 5\\n12345 Opfingen\\nDeutschland\",\"SendType\":\"VPR\",\"OrderNumber\":\"AB-1044\",\"Contact\":{\"Id\":\"64658688\",\"FirstName\":\"Harald\",\"LastName\":\"Müller\",\"Title\":\"M.Sc\",\"Description\":\"Kunde erstellt aus Logihero. Id: 1\",\"CompanyName\":\"Harald GmbH\",\"ContactType\":\"3\",\"ValueAddedTaxId\":\"DE326904432\"},\"Header\":\"Auftragsbestätigung AB-1044\",\"HeadText\":null,\"FootText\":null,\"ShowNet\":true,\"SendDate\":null,\"PdfStream\":null}";
+            var request = JsonConvert.DeserializeObject<CreateOrderRequest>(data);
+
+            var reslt = _sevDeskService.CreateOrderAsync(request).Result;
         }
     }
 }
