@@ -291,12 +291,16 @@ namespace sevDesk.Api
             var contactPerson = request.ContactPerson.Convert();
             var createUser = request.CreatedBy?.Convert() ?? contactPerson;
 
-            var getInvoiceNumberResult = await _sevDeskClient.FactoryGetNextInvoiceNumberAsync("RE", false, cancellationToken);
-            if (!getInvoiceNumberResult.Success)
+            var invoiceNumber = request.InvoiceNumber;
+            if (string.IsNullOrWhiteSpace(request.InvoiceNumber))
             {
-                throw new Exception("Unable to get next invoice number.");
+                var getInvoiceNumberResult = await _sevDeskClient.FactoryGetNextInvoiceNumberAsync("RE", false, cancellationToken);
+                if (!getInvoiceNumberResult.Success)
+                {
+                    throw new Exception("Unable to get next invoice number.");
+                }
+                invoiceNumber = getInvoiceNumberResult.Result;
             }
-            var invoiceNumber = getInvoiceNumberResult.Result;
 
             var invoice = new Invoice()
             {

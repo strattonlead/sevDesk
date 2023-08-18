@@ -123,6 +123,11 @@ namespace sevDesk.Api
         public string AddressCity { get; set; }
 
         /// <summary>
+        /// Rechnungsnummer, wenn keine gesetzt wird, dann wird von sevDesk eine erstellt
+        /// </summary>
+        public string InvoiceNumber { get; set; }
+
+        /// <summary>
         /// Rechnungsdatum
         /// </summary>
         public DateTime InvoiceDate { get; set; }
