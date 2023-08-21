@@ -48,7 +48,7 @@ namespace SevDeskClient
         public string Address { get; set; }
 
         [JsonProperty("sendType")]
-        public string SendType { get; set; } = "VPR";
+        public string SendType { get; set; }
 
         [JsonProperty("origin")]
         public int Origin { get; set; }

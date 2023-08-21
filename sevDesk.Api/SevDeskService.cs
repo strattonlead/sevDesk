@@ -462,6 +462,7 @@ namespace sevDesk.Api
                         {
                             order = putResult.Result;
                             result = order.Convert(orderPos);
+                            result.PdfStream = streamResult.Stream;
                         }
                     }
                 }
