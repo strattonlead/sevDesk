@@ -353,5 +353,65 @@ namespace sevDesk.Tests
 
             var reslt = _sevDeskService.CreateOrderAsync(request).Result;
         }
+
+        [Fact]
+        public void TemplateTest()
+        {
+            var templatesResult = _sevDeskClient.GetTemplatesWithThumbAsync().Result;
+            var test = templatesResult.Result.FirstOrDefault(x => x.Name == "No Positions");
+
+            var createCustomer = new CreateContactRequest()
+            {
+                CompanyName = "Neu erstellt",
+                FirstName = "Vorname",
+                LastName = "Nachname",
+                Title = "M.Sc",
+                ValueAddedTaxId = "DE326904432",
+                Description = "Neu erstellt"
+            };
+
+            var customer = _sevDeskService.CreateContactAsync(createCustomer).Result;
+            var contactPerson = _sevDeskService.GetAnyContactPerson().Result; // "777966"
+
+            var request = new CreateOrderRequest()
+            {
+                Address = "Arndt Bieberstein\nIm Neuneck 2/1\n78609 Tuningen",
+                Contact = customer,
+                ContactPerson = contactPerson,
+                //Currency = "EUR",
+                CustomerInternalNote = "CustomerInternalNote",
+                //FootText = "FootText",
+                //HeadText = "HeadText",
+                Header = "Header",
+                OrderDate = DateTime.Now.Date,
+                OrderStatus = OrderStatus.Accepted,
+                OrderType = OrderType.DeliveryNote,
+                SendDate = DateTime.Now.Date,
+                ShowNet = true,
+                TaxRate = 19,
+                //TaxText = "TaxText",
+                Version = 0,
+                CreateOrderLineItems = new List<CreateOrderLineItemRequest>()
+                {
+                    new CreateOrderLineItemRequest()
+                    {
+                        Name = "Name",
+                        TaxRate = 19,
+                        Price = 100,
+                        Quantity = 1,
+                        Text = "Text",
+                        UnityType = UnityTypes.FLAT_RATE.Id
+                    }
+                },
+                CreatePdf = true,
+                TemplateId = test.Id
+            };
+
+            var sevOrder = _sevDeskService.CreateOrderAsync(request).Result;
+
+            //var order = new Order() { Id = sevOrder.Id.ToString() };
+
+            //var res = _sevDeskClient.ChangeParameterAsync(order, test.Id).Result;
+        }
     }
 }

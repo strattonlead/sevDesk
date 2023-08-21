@@ -428,15 +428,28 @@ namespace sevDesk.Api
             orderPos = factoryOrderResult.OrderPos;
             var result = order.Convert(orderPos);
 
-            if (request.CreatePdf)
+            if (request.CreatePdf || !string.IsNullOrWhiteSpace(request.TemplateId))
             {
                 var streamResult = await _sevDeskClient.GetPdfAsync(order);
-                if (streamResult.Success)
+                if (streamResult.Success && request.CreatePdf)
                 {
                     result.PdfStream = streamResult.Stream;
                 }
+
             }
 
+            if (!string.IsNullOrWhiteSpace(request.TemplateId))
+            {
+                var changeParameterResult = await _sevDeskClient.ChangeParameterAsync(order, request.TemplateId, cancellationToken);
+                if (changeParameterResult.Success && request.CreatePdf)
+                {
+                    var streamResult = await _sevDeskClient.GetPdfAsync(order);
+                    if (streamResult.Success)
+                    {
+                        result.PdfStream = streamResult.Stream;
+                    }
+                }
+            }
             return result;
         }
 
@@ -475,6 +488,12 @@ namespace sevDesk.Api
             }
         }
 
+        public async Task<Template[]> GetTemplatesAsync(CancellationToken cancellationToken = default)
+        {
+            var result = await _sevDeskClient.GetTemplatesWithThumbAsync(cancellationToken);
+            return result.Result;
+        }
+
         #endregion
     }
 
@@ -494,6 +513,7 @@ namespace sevDesk.Api
     public class CreateOrderRequest : SevDeskOrder
     {
         public bool CreatePdf { get; set; }
+        public string TemplateId { get; set; }
 
         public List<CreateOrderLineItemRequest> CreateOrderLineItems { get; set; } = new List<CreateOrderLineItemRequest>();
     }

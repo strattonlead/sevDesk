@@ -51,6 +51,8 @@ namespace sevDesk.Api
         //Task<bool> CheckCustomerNumberAvailability(string customerNumber);
         Task<GetResult<string>> FactoryGetNextCustomerNumberAsync(CancellationToken cancellationToken = default);
         Task<GetResult<string>> FactoryGetNextOrderNumberAsync(string orderType = "AB", bool useNextNumber = true, CancellationToken cancellationToken = default);
-
+        Task<GetResult<Template[]>> GetTemplatesWithThumbAsync(CancellationToken cancellationToken = default);
+        Task<HttpStatusResult> ChangeParameterAsync<T>(T obj, string template, CancellationToken cancellationToken = default)
+            where T : SevClientStreamObject;
     }
 }

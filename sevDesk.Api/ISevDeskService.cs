@@ -31,6 +31,7 @@ namespace sevDesk.Api
         Task<string> GetNextOrderNumberAsync(OrderType orderType, CancellationToken cancellationToken = default);
 
         Task<SevDeskContact> EnsureCreatedAsync(SevDeskContact contact, CancellationToken cancellationToken = default);
+        Task<Template[]> GetTemplatesAsync(CancellationToken cancellationToken = default);
     }
 
     public class SevDeskCountry

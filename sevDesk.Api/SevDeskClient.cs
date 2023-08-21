@@ -560,6 +560,44 @@ namespace sevDesk.Api
             };
         }
 
+        /// <summary>
+        /// /https://api.sevdesk.de/#tag/Layout/operation/getTemplates
+        /// </summary>
+        public async Task<GetResult<Template[]>> GetTemplatesWithThumbAsync(CancellationToken cancellationToken = default)
+        {
+            var restRequest = new RestRequest();
+            restRequest.Resource = $"DocServer/getTemplatesWithThumb";
+            var response = await _restClient.ExecuteAsync(restRequest, cancellationToken);
+
+            dynamic deserialized = JsonConvert.DeserializeObject(response.Content);
+            var templates = JsonConvert.DeserializeObject<Template[]>(JsonConvert.SerializeObject(deserialized.objects.templates));
+
+            return new GetResult<Template[]>()
+            {
+                Result = templates,
+                StatusCode = response.StatusCode
+            };
+        }
+
+        ///https://my.sevdesk.de/api/v1/Order/{orderId}/changeParameter
+        public async Task<HttpStatusResult> ChangeParameterAsync<T>(T obj, string template, CancellationToken cancellationToken = default)
+            where T : SevClientStreamObject
+        {
+            var restRequest = new RestRequest();
+            restRequest.Resource = $"{obj.ObjectName}/{obj.Id}/changeParameter";
+            restRequest.Method = Method.Put;
+            restRequest.AddJsonBody(new
+            {
+
+                key = "template",
+                value = template
+            });
+            var response = await _restClient.ExecuteAsync(restRequest, cancellationToken);
+            dynamic deserialized = JsonConvert.DeserializeObject(response.Content);
+
+            return new HttpStatusResult() { StatusCode = response.StatusCode };
+        }
+
         #endregion
     }
 
