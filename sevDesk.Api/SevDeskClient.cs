@@ -228,6 +228,7 @@ namespace sevDesk.Api
             restRequest.Resource = $"{item.ObjectName}/{item.Id}/getPdf";
             restRequest.AddParameter("id", item.Id);
             restRequest.AddParameter("download", "true");
+            restRequest.AddParameter("preventSendBy", "true");
 
             Stream stream = null;
             var statusCode = HttpStatusCode.OK;

@@ -358,7 +358,7 @@ namespace sevDesk.Tests
         public void TemplateTest()
         {
             var templatesResult = _sevDeskClient.GetTemplatesWithThumbAsync().Result;
-            var test = templatesResult.Result.FirstOrDefault(x => x.Name == "No Positions");
+            var test = templatesResult.Result.FirstOrDefault(x => x.Name == "LOGIHERO_NO_POSITIONS");
 
             var createCustomer = new CreateContactRequest()
             {
@@ -387,6 +387,7 @@ namespace sevDesk.Tests
                 OrderStatus = OrderStatus.Accepted,
                 OrderType = OrderType.DeliveryNote,
                 SendDate = DateTime.Now.Date,
+                OrderNumber = "UNITTEST123",
                 ShowNet = true,
                 TaxRate = 19,
                 //TaxText = "TaxText",
@@ -404,7 +405,8 @@ namespace sevDesk.Tests
                     }
                 },
                 CreatePdf = true,
-                TemplateId = test.Id
+                TemplateId = test.Id,
+                SendType = null
             };
 
             var sevOrder = _sevDeskService.CreateOrderAsync(request).Result;

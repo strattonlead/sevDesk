@@ -379,6 +379,14 @@ namespace sevDesk.Api
         /// <returns></returns>
         public async Task<SevDeskOrder> CreateOrderAsync(CreateOrderRequest request, CancellationToken cancellationToken = default)
         {
+            var realStatus = request.OrderStatus.Convert();
+
+            var status = request.OrderStatus.Convert();
+            if ((request.CreatePdf || !string.IsNullOrWhiteSpace(request.TemplateId)) && request.OrderStatus != OrderStatus.Draft)
+            {
+                status = OrderStatus.Draft.Convert();
+            }
+
             var order = new Order()
             {
                 Address = request.Address,
@@ -399,7 +407,7 @@ namespace sevDesk.Api
                 ShowNet = request.ShowNet,
                 SendType = request.SendType,
                 SmallSettlement = false,
-                Status = request.OrderStatus.Convert(),
+                Status = status,
                 TaxRate = request.TaxRate,
                 //TaxSet = "",
                 TaxText = request.TaxText,
@@ -447,6 +455,14 @@ namespace sevDesk.Api
                     if (streamResult.Success)
                     {
                         result.PdfStream = streamResult.Stream;
+
+                        order.Status = realStatus;
+                        var putResult = await _sevDeskClient.UpdateAsync(order);
+                        if (putResult.Success)
+                        {
+                            order = putResult.Result;
+                            result = order.Convert(orderPos);
+                        }
                     }
                 }
             }
