@@ -322,7 +322,9 @@ namespace sevDesk.Api
                 Currency = "EUR",
                 ShowNet = 1,
                 SendType = request.CreatePdf ? "VPDF" : "VPR",
-                CreateUser = createUser
+                CreateUser = createUser,
+                HeadText = request.HeadText,
+                FootText = request.FootText
             };
 
             if (taxType != "default")

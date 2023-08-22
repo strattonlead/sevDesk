@@ -152,6 +152,9 @@ namespace sevDesk.Api
         /// PDF direkt erstellen. Die Rechnung ist dann finalisiert!!
         /// </summary>
         public bool CreatePdf { get; set; }
+
+        public string HeadText { get; set; }
+        public string FootText { get; set; }
     }
 
     public class SevDeskLineItem : CreateLineItemRequest

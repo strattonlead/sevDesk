@@ -387,7 +387,7 @@ namespace sevDesk.Tests
                 OrderStatus = OrderStatus.Accepted,
                 OrderType = OrderType.DeliveryNote,
                 SendDate = DateTime.Now.Date,
-                OrderNumber = "UNITTEST123",
+                OrderNumber = "UNITTEST12",
                 ShowNet = true,
                 TaxRate = 19,
                 //TaxText = "TaxText",
