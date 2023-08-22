@@ -155,6 +155,7 @@ namespace sevDesk.Api
 
         public string HeadText { get; set; }
         public string FootText { get; set; }
+        public string TaxType { get; set; }
     }
 
     public class SevDeskLineItem : CreateLineItemRequest

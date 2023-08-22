@@ -252,7 +252,12 @@ namespace sevDesk.Api
                 throw new ArgumentException($"Country {request.AddressCountry.Name} ({request.AddressCountry.Id}) not found");
             }
 
-            var taxType = GetTaxType(_sourceCountry, request.AddressCountry);
+            var taxType = request.TaxType;
+            if (string.IsNullOrWhiteSpace(request.TaxType))
+            {
+                taxType = GetTaxType(_sourceCountry, request.AddressCountry);
+            }
+
             if (string.IsNullOrWhiteSpace(taxType))
             {
                 throw new Exception("TaxType can not be determined.");
