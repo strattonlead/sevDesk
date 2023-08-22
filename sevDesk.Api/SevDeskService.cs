@@ -341,7 +341,7 @@ namespace sevDesk.Api
             var posNumber = 0;
             foreach (var lineItem in request.CreateLineItems)
             {
-                var pos = lineItem.Convert();
+                var pos = lineItem.Convert(taxType);
                 pos.PositionNumber = posNumber++;
                 invoicePos.Add(pos);
             }
@@ -674,7 +674,17 @@ namespace sevDesk.Api
         internal static SevUser Convert(this SevDeskUser user) => new SevUser() { Id = user.Id, Email = user.Email, FirstName = user.FirstName, Fullname = user.Fullname, LastName = user.LastName, Username = user.Username };
         internal static SevDeskUser Convert(this SevUser user) => new SevDeskUser() { Id = user.Id, Email = user.Email, FirstName = user.FirstName, Fullname = user.Fullname, LastName = user.LastName, Username = user.Username };
         internal static SevDeskCountry Convert(this StaticCountry country) => _countryConverter(country);
-        internal static InvoicePos Convert(this CreateLineItemRequest lineItem) => new InvoicePos() { Name = lineItem.Name, PriceNet = lineItem.PriceNet, Quantity = lineItem.Quantity, Text = lineItem.Text, unity = UnityTypes.GetUnity(lineItem.UnityType) };
+        internal static InvoicePos Convert(this CreateLineItemRequest lineItem, string taxType = null) => new InvoicePos()
+        {
+            Name = lineItem.Name,
+            PriceNet = lineItem.PriceNet,
+            Quantity = lineItem.Quantity,
+            Text = lineItem.Text,
+            TaxRate = lineItem.TaxRate.HasValue ? lineItem.TaxRate.Value : (taxType == "default" ? 19 : 0),
+            PriceTax = Math.Round(lineItem.PriceNet * (decimal)(lineItem.TaxRate.HasValue ? lineItem.TaxRate.Value : (taxType == "default" ? 19 : 0)), 2),
+            PriceGross = lineItem.PriceNet + Math.Round(lineItem.PriceNet * (decimal)(lineItem.TaxRate.HasValue ? lineItem.TaxRate.Value : (taxType == "default" ? 19 : 0)), 2),
+            unity = UnityTypes.GetUnity(lineItem.UnityType)
+        };
         internal static OrderPos Convert(this CreateOrderLineItemRequest lineItem) => new OrderPos()
         {
             Name = lineItem.Name,
