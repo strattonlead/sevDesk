@@ -347,6 +347,11 @@ namespace sevDesk.Api
             }
 
             var factoryInvoiceResult = await _sevDeskClient.FactorySaveInvoiceAsync(invoice, invoicePos);
+            if (!factoryInvoiceResult.IsSuccessStatusCode)
+            {
+                throw new Exception(factoryInvoiceResult.ResponseContent);
+            }
+
             invoice = factoryInvoiceResult.Invoice;
             invoicePos = factoryInvoiceResult.InvoicePos;
 

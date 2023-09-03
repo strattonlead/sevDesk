@@ -453,11 +453,20 @@ namespace sevDesk.Api
             restRequest.Method = Method.Post;
 
             var response = await _restClient.ExecuteAsync(restRequest, cancellationToken);
+            if (!response.IsSuccessful)
+            {
+                return new FactoryInvoiceResult()
+                {
+                    ResponseContent = response.Content,
+                    StatusCode = response.StatusCode,
+                };
+            }
             var deserialized = JsonConvert.DeserializeAnonymousType(response.Content, new { objects = new { Invoice = new Invoice(), InvoicePos = new List<InvoicePos>() } }, new JsonSerializerSettings() { MissingMemberHandling = MissingMemberHandling.Ignore }).objects;
             invoice = deserialized.Invoice;
             var pos = deserialized.InvoicePos;
             return new FactoryInvoiceResult()
             {
+                IsSuccessStatusCode = true,
                 Invoice = invoice,
                 InvoicePos = pos,
                 StatusCode = response.StatusCode
@@ -485,6 +494,7 @@ namespace sevDesk.Api
             var response = await _restClient.ExecuteAsync(restRequest, cancellationToken);
             return new HttpStatusResult()
             {
+                IsSuccessStatusCode = response.IsSuccessStatusCode,
                 StatusCode = response.StatusCode
             };
         }
@@ -604,6 +614,8 @@ namespace sevDesk.Api
 
     public class HttpStatusResult
     {
+        public bool IsSuccessStatusCode { get; set; }
+        public string ResponseContent { get; set; }
         public HttpStatusCode StatusCode { get; set; }
         public bool Success => (int)StatusCode >= 200 && (int)StatusCode < 400;
     }
