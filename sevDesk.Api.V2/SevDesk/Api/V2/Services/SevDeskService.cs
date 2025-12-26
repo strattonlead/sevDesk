@@ -26,11 +26,14 @@ namespace SevDesk.Api.V2.Services
                 var createdContact = await CreateContactAsync(request.CreateContact, cancellationToken);
                 if (createdContact != null && !string.IsNullOrEmpty(createdContact.Id))
                 {
-                    contact = new Model_Invoice_contact
+                    if (int.TryParse(createdContact.Id, out int contactId))
                     {
-                        Id = int.Parse(createdContact.Id), // Convert string Id to int
-                        ObjectName = "Contact"
-                    };
+                        contact = new Model_Invoice_contact
+                        {
+                            Id = contactId,
+                            ObjectName = "Contact"
+                        };
+                    }
                 }
             }
 
@@ -44,16 +47,16 @@ namespace SevDesk.Api.V2.Services
             // Skipping Factory.GetNextInvoiceNumber as it's not available in generated client.
 
             // 3. Tax Rule Determination
-            var taxRuleId = "1"; // Default
+            Model_Invoice_taxRule_id taxRuleId = Model_Invoice_taxRule_id.One; // Default
             if (!string.IsNullOrEmpty(request.TaxType))
             {
-                if (request.TaxType == "noteu") taxRuleId = "2";
-                if (request.TaxType == "ss") taxRuleId = "11";
+                if (request.TaxType == "noteu") taxRuleId = Model_Invoice_taxRule_id.Two;
+                if (request.TaxType == "ss") taxRuleId = Model_Invoice_taxRule_id.OneOne;
             }
 
             var taxRule = new Model_Invoice_taxRule
             {
-                Id = Enum.Parse<Model_Invoice_taxRule_id>(taxRuleId),
+                Id = taxRuleId,
                 ObjectName = Model_Invoice_taxRule_objectName.TaxRule
             };
 
@@ -111,6 +114,11 @@ namespace SevDesk.Api.V2.Services
 
         public async Task<Model_ContactResponse> CreateContactAsync(CreateContactRequest request, CancellationToken cancellationToken = default)
         {
+            if (!int.TryParse(request.ContactType ?? "3", out int contactTypeId))
+            {
+                contactTypeId = 3; // Default
+            }
+
             var contact = new Model_Contact
             {
                 Name = request.CompanyName,
@@ -121,7 +129,7 @@ namespace SevDesk.Api.V2.Services
                 VatNumber = request.VatNumber,
                 Category = new Model_Contact_category
                 {
-                    Id = int.Parse(request.ContactType ?? "3"),
+                    Id = contactTypeId,
                     ObjectName = "Category"
                 }
             };
@@ -131,6 +139,10 @@ namespace SevDesk.Api.V2.Services
 
         private int GetUnityId(string unityType)
         {
+            // Simple mapping or fetch from cache.
+            // For now, hardcode some common ones or default.
+            // "stk" -> 1?
+            // In a real implementation this should probably fetch available units or use an Enum mapping if known.
             return 1; // Placeholder
         }
     }
